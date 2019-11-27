@@ -1,4 +1,9 @@
+//Written by Paul Schakel
+//This file is the main class of the EncryptionCli project
+
 package cryptography;
+
+import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -17,7 +22,7 @@ public class Cryptography {
     static Random generator = new Random();
     static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/cryptography/KeyAliases.txt";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {       //this function takes care of user interaction
         System.out.println("Welcome to the Encryption Program");
         while (true) {
             System.out.println("1. Encrypt text \n 2. Decrypt text \n\n Enter Selection : ");
@@ -64,38 +69,38 @@ public class Cryptography {
         }
     }
 
-    public static SecretKey generateKey() throws Exception {
+    public static SecretKey generateKey() throws Exception {        //generates secret key
         KeyGenerator generator = KeyGenerator.getInstance("AES");
         generator.init(256);
         SecretKey secret = generator.generateKey();
         return secret;
     }
 
-    public static String getPlainText() {
+    public static String getPlainText() {       //receives plain text to encrypt and returns it
         System.out.println("Enter the text you wish to Encrypt : ");
         String plainText = sc.nextLine();
         return plainText;
     }
 
-    public static byte[] encrypt(String plainText, SecretKey secKey) throws Exception {
+    public static byte[] encrypt(String plainText, SecretKey secKey) throws Exception {         //takes the plaintext to encrypt and the secret key and encrypts the text with the key
         Cipher aesCipher = Cipher.getInstance("AES");
         aesCipher.init(Cipher.ENCRYPT_MODE, secKey);
         byte[] byteCipherText = aesCipher.doFinal(plainText.getBytes());
         return byteCipherText;
     }
 
-    public static String decrypt(byte[] encryptedText, SecretKey secKey) throws Exception {
+    public static String decrypt(byte[] encryptedText, SecretKey secKey) throws Exception {         //takes the encrypted byte array and decrypts it with the secret key provided
         Cipher aesCipher = Cipher.getInstance("AES");
         aesCipher.init(Cipher.DECRYPT_MODE, secKey);
         byte[] bytePlainText = aesCipher.doFinal(encryptedText);
         return new String(bytePlainText);
     }
 
-    private static String bytesToHex(byte[] hash) {
+    private static String bytesToHex(byte[] hash) {         //makes the encrypted byte array into a hex string
         return DatatypeConverter.printHexBinary(hash);
     }
 
-    private static byte[] hexToBytes(String hex){
+    private static byte[] hexToBytes(String hex){         //converts the hex string back to a byte array
         byte[] bytes = new byte[hex.length() / 2];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) Integer.parseInt(hex.substring(2*i, 2*i+2), 16);
@@ -103,7 +108,7 @@ public class Cryptography {
         return bytes;
     }
 
-    public static String  getPassword(){
+    public static String  getPassword(){        //gets the password which corresponds to the secret key
         while (true) {
             System.out.println("Enter the password for the key generation : ");
             String input1 = sc.nextLine();
@@ -122,7 +127,7 @@ public class Cryptography {
         }
     }
 
-    public static void storeKey(SecretKey key, String passwordHash) throws IOException {
+    public static void storeKey(SecretKey key, String passwordHash) throws IOException {        //creates a file to contain the secret key
         String entryAlias = ".r" + generateString(30);
         File file = new File(entryAlias);
         ObjectOutputStream oout = new ObjectOutputStream(new FileOutputStream(entryAlias));
@@ -139,7 +144,7 @@ public class Cryptography {
 
     }
 
-    public static String generateString(int length) {
+    public static String generateString(int length) {       //generates a random string of a specified length
         char[] characters = {'q', 'w', 'e', 'r', 't', 'y', 'u',
                 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j',
                 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm', '1', '2',
@@ -151,7 +156,7 @@ public class Cryptography {
         return new String(string);
     }
 
-    public static SecretKey getKey() throws IOException, ClassNotFoundException, NoSuchAlgorithmException{
+    public static SecretKey getKey() throws IOException, ClassNotFoundException, NoSuchAlgorithmException{         //gets the password which corresponds to the secret key and fetches the key
         System.out.println("Enter the password to the SecretKey that encrypted this message : ");
         String password = getHash(sc.nextLine());
         BufferedReader br = new BufferedReader(new FileReader(path));
@@ -175,7 +180,7 @@ public class Cryptography {
         return secKey;
     }
 
-    public static int findString(ArrayList<String> array , String toFindHash){
+    public static int findString(@NotNull ArrayList<String> array , String toFindHash){      //takes an array of strings, finds the specified one and returns it
         for (int i = 0; i < array.size(); i++){
             if (toFindHash.equals(array.get(i))){
                 return i - 1;
@@ -186,7 +191,7 @@ public class Cryptography {
         return 0;
     }
 
-    public static String getHash(String toHash) throws NoSuchAlgorithmException{
+    public static String getHash(String toHash) throws NoSuchAlgorithmException{        //creates a SHA1 hash of a string
         MessageDigest md = MessageDigest.getInstance("SHA1");
         md.reset();
         byte[] bytes = toHash.getBytes();
