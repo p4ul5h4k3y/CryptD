@@ -3,8 +3,8 @@
 
 package cryptography;
 
-import org.jetbrains.annotations.NotNull;
 
+import com.sun.istack.internal.NotNull;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -20,7 +20,7 @@ import java.io.*;
 public class Cryptography {
     static Scanner sc = new Scanner(System.in);
     static Random generator = new Random();
-    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/cryptography/KeyAliases.txt";
+    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/cryptography/KeyAliases.json";
 
     public static void main(String[] args) throws Exception {       //this function takes care of user interaction
         System.out.println("Welcome to the Encryption Program");
