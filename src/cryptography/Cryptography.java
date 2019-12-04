@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This file is the main class of the EncryptionCli project
+//This file is the main class of the EncryptionCli project. It handles the encryption of text.
 
 package cryptography;
 
@@ -18,7 +18,7 @@ import org.json.simple.JSONObject;
 
 public class Cryptography {
     static Scanner sc = new Scanner(System.in);
-    static String path = "/home/user/De  sktop/Programming/Java/Cryptography/src/cryptography/KeyAliases.json";
+    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/cryptography/conf.json";
 
     public static void main(String[] args) throws Exception {       //this function takes care of user interaction
         System.out.println("Welcome to the Encryption Program");
