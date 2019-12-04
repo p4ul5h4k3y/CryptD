@@ -1,8 +1,6 @@
 //Written by Paul Schakel
 //This class creates and stores the keypair for encryption and saves the path to the public and private keys in conf.json
 
-package cryptography;
-
 import java.io.*;
 
 import org.json.simple.JSONObject;
