@@ -1,9 +1,6 @@
 //Written by Paul Schakel
 //This file is the main class of the EncryptionCli project. It handles the encryption of text.
 
-package cryptography;
-
-
 import com.sun.istack.internal.NotNull;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
