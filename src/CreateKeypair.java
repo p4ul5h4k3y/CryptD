@@ -1,31 +1,40 @@
 //Written by Paul Schakel
-//This class creates and stores the keypair for encryption and saves the path to the public and private keys in conf.json
+//This class creates and stores the keypair for encryption and saves the path to the public and private keys in configuration.conf
 
 import java.io.*;
-
-import org.json.simple.JSONObject;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Properties;
 import java.util.Scanner;
-
 import sun.misc.BASE64Encoder;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
-import javax.swing.*;
-
 
 public class CreateKeypair {
     static Scanner sc = new Scanner(System.in);
-    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/cryptography/conf.json";
 
-    public static void main(String[] args) throws NoSuchAlgorithmException {
-        String pass = sc.nextLine();
-        createKeys(pass, "/home/user/Desktop/Programming/Java/Cryptography");
+    public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
+        String path = parseArgs(args, "-p");
+        if (path.equals("NO ARGS")){
+            System.out.println("Path argument neccesary to create keypair");
+            System.exit(0);
+        }
+        System.out.println("Enter the password for keypair generation: ");
+        String pass1 = sc.nextLine();
+        System.out.println("\nEnter the password again for confirmation : ");
+        String pass2 = sc.nextLine();
+        if (pass1.equals(pass2)) {
+            createKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
+        }
+        else {
+            System.out.println("Passwords do not match!!\nExiting...");
+            System.exit(0);
+        }
     }
 
-    public static void createKeys(String password, String keyStorePath) throws NoSuchAlgorithmException {
+
+    public static void createKeys(String password, String keyStorePath, String confPath) throws IOException, NoSuchAlgorithmException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
         BASE64Encoder b64 = new BASE64Encoder();
 
@@ -40,27 +49,39 @@ public class CreateKeypair {
         System.out.println("Private Key (Keep this one secret) -- " + b64.encode(privKey.getEncoded()));
 
         try {
-            CertAndKeyGen keyGen=new CertAndKeyGen("RSA","SHA1WithRSA",null);
+            CertAndKeyGen keyGen = new CertAndKeyGen("RSA", "SHA1WithRSA");
+            keyGen.generate(1024);
             X509Certificate rootCertificate = keyGen.getSelfCertificate(new X500Name("CN=ROOT"), (long) 365 * 24 * 60 * 60);
 
-            CertAndKeyGen keyGen1=new CertAndKeyGen("RSA","SHA1WithRSA",null);
+            CertAndKeyGen keyGen1 = new CertAndKeyGen("RSA", "SHA1WithRSA");
+            keyGen1.generate(1024);
             X509Certificate middleCertificate = keyGen1.getSelfCertificate(new X500Name("CN=SERVER"), (long) 365 * 24 * 60 * 60);
 
             X509Certificate[] chain = new X509Certificate[2];
-            chain[0]=rootCertificate;
-            chain[1]=middleCertificate;
+            chain[0] = rootCertificate;
+            chain[1] = middleCertificate;
 
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             char[] pwdChars = password.toCharArray();
             ks.load(null, pwdChars);
             ks.setKeyEntry("private-key", privKey, pwdChars, chain);
             FileOutputStream fos = new FileOutputStream(keyStorePath + "/store.jks");
-            ks.store(fos,pwdChars);
+            ks.store(fos, pwdChars);
 
         } catch (Exception ex) {
             System.out.println("Something  went wrong while storing the private key.");
-            System.out.println(ex);
+            ex.printStackTrace();
         }
+
+        Properties config = new Properties();
+        FileInputStream fis = new FileInputStream(confPath);
+        config.load(fis);
+        fis.close();
+
+        FileOutputStream fos = new FileOutputStream(confPath);
+        config.setProperty("KEYSTORE", keyStorePath + "/store.jks");
+        config.store(fos, "");
+        fos.close();
     }
 
     public static SecureRandom createFixedRandom() {
@@ -101,5 +122,18 @@ public class CreateKeypair {
                 sha.update(state);
             }
         }
+    }
+
+    public static String parseArgs(String[] args, String flag){
+        int i = 0;
+        for (String arg:args){
+            if (arg.equals(flag)){
+                return args[i + 1];
+            }
+            else{
+                i++;
+            }
+        }
+        return "NO ARGS";
     }
 }
