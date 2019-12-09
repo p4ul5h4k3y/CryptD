@@ -1,14 +1,18 @@
 //Written by Paul Schakel
 //This class creates and stores the keypair for encryption and saves the path to the public and private keys in configuration.conf
 
+
 import java.io.*;
+import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
+import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
-import sun.misc.BASE64Encoder;
-import sun.security.tools.keytool.CertAndKeyGen;
-import sun.security.x509.X500Name;
+import org.bouncycastle.x509.X509V1CertificateGenerator;
+import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 public class CreateKeypair {
@@ -16,8 +20,8 @@ public class CreateKeypair {
 
     public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
         String path = parseArgs(args, "-p");
-        if (path.equals("NO ARGS")){
-            System.out.println("Path argument neccesary to create keypair");
+        if (path.equals("NO ARGS")) {
+            System.out.println("E: Path argument necessary to create keypair");
             System.exit(0);
         }
         System.out.println("Enter the password for keypair generation: ");
@@ -26,8 +30,7 @@ public class CreateKeypair {
         String pass2 = sc.nextLine();
         if (pass1.equals(pass2)) {
             createKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
-        }
-        else {
+        } else {
             System.out.println("Passwords do not match!!\nExiting...");
             System.exit(0);
         }
@@ -35,8 +38,9 @@ public class CreateKeypair {
 
 
     public static void createKeys(String password, String keyStorePath, String confPath) throws IOException, NoSuchAlgorithmException {
+        Security.addProvider(new BouncyCastleProvider());
+
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-        BASE64Encoder b64 = new BASE64Encoder();
 
         SecureRandom random = createFixedRandom();
         generator.initialize(2048, random);
@@ -45,17 +49,26 @@ public class CreateKeypair {
         Key pubKey = pair.getPublic();
         Key privKey = pair.getPrivate();
 
-        System.out.println("Public Key (Share this one) -- " + b64.encode(pubKey.getEncoded()));
-        System.out.println("Private Key (Keep this one secret) -- " + b64.encode(privKey.getEncoded()));
+        System.out.println("Public Key (Share this one) -- " + Base64.getEncoder().encodeToString(pubKey.getEncoded()));
+        System.out.println("Private Key (Keep this one secret) -- " + Base64.getEncoder().encodeToString(privKey.getEncoded()));
 
         try {
-            CertAndKeyGen keyGen = new CertAndKeyGen("RSA", "SHA1WithRSA");
-            keyGen.generate(1024);
-            X509Certificate rootCertificate = keyGen.getSelfCertificate(new X500Name("CN=ROOT"), (long) 365 * 24 * 60 * 60);
+            X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
 
-            CertAndKeyGen keyGen1 = new CertAndKeyGen("RSA", "SHA1WithRSA");
-            keyGen1.generate(1024);
-            X509Certificate middleCertificate = keyGen1.getSelfCertificate(new X500Name("CN=SERVER"), (long) 365 * 24 * 60 * 60);
+            X500Principal dnName = new X500Principal("CN=ROOT");
+            Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+            Date validityEndDate = new Date(System.currentTimeMillis() + 3 * 365 * 24 * 60 * 60 * 1000);
+
+            certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+            certGen.setSubjectDN(dnName);
+            certGen.setIssuerDN(dnName);
+            certGen.setNotBefore(validityBeginDate);
+            certGen.setNotAfter(validityEndDate);
+            certGen.setPublicKey((PublicKey) pubKey);
+            certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
+
+            X509Certificate rootCertificate = certGen.generate((PrivateKey) privKey, "BC");
+            X509Certificate middleCertificate = certGen.generate((PrivateKey) privKey, "BC");
 
             X509Certificate[] chain = new X509Certificate[2];
             chain[0] = rootCertificate;
@@ -124,13 +137,12 @@ public class CreateKeypair {
         }
     }
 
-    public static String parseArgs(String[] args, String flag){
+    public static String parseArgs(String[] args, String flag) {
         int i = 0;
-        for (String arg:args){
-            if (arg.equals(flag)){
+        for (String arg : args) {
+            if (arg.equals(flag)) {
                 return args[i + 1];
-            }
-            else{
+            } else {
                 i++;
             }
         }
