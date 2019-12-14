@@ -24,26 +24,18 @@ public class CreateKeypair {
             System.out.println("E: Path argument necessary to create keypair");
             System.exit(0);
         }
-        System.out.println("Enter the password for keypair generation: ");
-        String pass1 = sc.nextLine();
-        System.out.println("\nEnter the password again for confirmation : ");
-        String pass2 = sc.nextLine();
-        if (pass1.equals(pass2)) {
-            createKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
-        } else {
-            System.out.println("Passwords do not match!!\nExiting...");
-            System.exit(0);
-        }
+        String pass1 = getPassword();
+        createKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
     }
 
 
-    public static void createKeys(String password, String keyStorePath, String confPath) throws IOException, NoSuchAlgorithmException {
+    public static void createKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException {
         Security.addProvider(new BouncyCastleProvider());
 
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
 
         SecureRandom random = createFixedRandom();
-        generator.initialize(2048, random);
+        generator.initialize(4096, random);
 
         KeyPair pair = generator.generateKeyPair();
         Key pubKey = pair.getPublic();
@@ -86,15 +78,30 @@ public class CreateKeypair {
             ex.printStackTrace();
         }
 
-        Properties config = new Properties();
-        FileInputStream fis = new FileInputStream(confPath);
-        config.load(fis);
-        fis.close();
+        try {
+            ObjectOutputStream oout = new ObjectOutputStream(new FileOutputStream(keyStorePath + "/key.pub"));
+            oout.writeObject(pubKey);
+            oout.close();
+        } catch (IOException ex) {
+            System.out.println("E: Error occured while storing the public key");
+            ex.printStackTrace();
+        }
 
-        FileOutputStream fos = new FileOutputStream(confPath);
-        config.setProperty("KEYSTORE", keyStorePath + "/store.jks");
-        config.store(fos, "");
-        fos.close();
+
+        try {
+            Properties config = new Properties();
+            FileInputStream fis = new FileInputStream(confPath);
+            config.load(fis);
+            fis.close();
+
+            FileOutputStream fos = new FileOutputStream(confPath);
+            config.setProperty("KEYSTORE", keyStorePath + "/store.jks");
+            config.setProperty("PUBKEY", keyStorePath + "/key.pub");
+            config.store(fos, "");
+            fos.close();
+        } catch (IOException ex) {
+            System.out.println("E: Error occured while storing new config");
+        }
     }
 
     public static SecureRandom createFixedRandom() {
@@ -110,8 +117,9 @@ public class CreateKeypair {
             try {
                 this.sha = MessageDigest.getInstance("SHA-1");
                 this.state = sha.digest();
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("can't find SHA-1!");
+            } catch (NoSuchAlgorithmException ex) {
+                System.out.println("E: Can't find SHA-1!");
+                ex.printStackTrace();
             }
         }
 
@@ -147,5 +155,24 @@ public class CreateKeypair {
             }
         }
         return "NO ARGS";
+    }
+
+    public static String getPassword() {        //gets the password which corresponds to the secret key
+        while (true) {
+            System.out.println("Enter a password for key generation : ");
+            String input1 = sc.nextLine();
+            System.out.println("Enter the same password for confirmation : ");
+            String input2 = sc.nextLine();
+            if (input1.equals(input2)) {
+                if (input1.length() < 8) {
+                    System.out.println("Enter a longer password.");
+                } else {
+                    System.out.println("Password Confirmed");
+                    return input1;
+                }
+            } else {
+                System.out.println("Passwords did not match. Try Again.\n");
+            }
+        }
     }
 }
