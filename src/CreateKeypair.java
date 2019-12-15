@@ -6,7 +6,6 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
@@ -18,7 +17,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 public class CreateKeypair {
     static Scanner sc = new Scanner(System.in);
 
-    public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
+    public static void main(String[] args) throws NoSuchAlgorithmException {
         String path = parseArgs(args, "-p");
         if (path.equals("NO ARGS")) {
             System.out.println("E: Path argument necessary to create keypair");
@@ -38,11 +37,10 @@ public class CreateKeypair {
         generator.initialize(4096, random);
 
         KeyPair pair = generator.generateKeyPair();
-        Key pubKey = pair.getPublic();
-        Key privKey = pair.getPrivate();
+        PublicKey pubKey = pair.getPublic();
+        PrivateKey privKey = pair.getPrivate();
 
-        System.out.println("Public Key (Share this one) -- " + Base64.getEncoder().encodeToString(pubKey.getEncoded()));
-        System.out.println("Private Key (Keep this one secret) -- " + Base64.getEncoder().encodeToString(privKey.getEncoded()));
+        System.out.println("Public and Private keys have been generated successfully");
 
         try {
             X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
@@ -56,11 +54,11 @@ public class CreateKeypair {
             certGen.setIssuerDN(dnName);
             certGen.setNotBefore(validityBeginDate);
             certGen.setNotAfter(validityEndDate);
-            certGen.setPublicKey((PublicKey) pubKey);
+            certGen.setPublicKey(pubKey);
             certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
-            X509Certificate rootCertificate = certGen.generate((PrivateKey) privKey, "BC");
-            X509Certificate middleCertificate = certGen.generate((PrivateKey) privKey, "BC");
+            X509Certificate rootCertificate = certGen.generate(privKey, "BC");
+            X509Certificate middleCertificate = certGen.generate( privKey, "BC");
 
             X509Certificate[] chain = new X509Certificate[2];
             chain[0] = rootCertificate;
