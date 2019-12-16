@@ -2,6 +2,7 @@
 //This file is the main class of the EncryptionCli project. It handles the encryption of text.
 
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -12,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 import java.util.Scanner;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 public class Encrypt {
@@ -28,10 +28,10 @@ public class Encrypt {
             System.out.println("1. Encrypt text \n 2. Decrypt text \n\n Enter Selection : ");
             String option = sc.nextLine();
             if (option.equals("1")) {
-                PrivateKey key = (PrivateKey) getKey(true);
+                PublicKey key = (PublicKey) getKey(false);
                 String toEncrypt = getPlainText();
                 byte[] encrypted = encrypt(toEncrypt, sessionKey);
-                String filename = storeTextAndKey(bytesToHex(encrypted), sessionKey, key);
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), sessionKey), key);
                 System.out.println("\nSaved encrypted text to file : " + filename);
                 System.out.println("\n\n1. Encrypt/Decrypt another message\n2. Exit\n\nEnter Selection : ");
                 option = sc.nextLine();
@@ -44,10 +44,12 @@ public class Encrypt {
                     System.out.println("Invalid Option!\nRedirecting...");
                 }
             } else if (option.equals("2")) {
-                System.out.println("Enter the Encrypted text : ");
-                byte[] encryptedText = hexToBytes(sc.nextLine());
-                PublicKey key = (PublicKey) getKey(false);
-                String plainText = decrypt(encryptedText, key);
+                System.out.println("Enter the path to the .crypt file : ");
+                String path = (sc.nextLine());
+                PrivateKey key = (PrivateKey) getKey(true);
+                TextAndKey cryptTextAndKey = getTextAndKey(path, key);
+                SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
+                String plainText = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);
                 System.out.println("Decrypted Text : " + plainText);
                 System.out.println("\n\n1. Encrypt/Decrypt another message\n2. Exit\n\nEnter Selection : ");
                 option = sc.nextLine();
@@ -71,7 +73,7 @@ public class Encrypt {
 
     public static byte[] encrypt(String plainText, SecretKey cryptKey) {         //takes the plaintext to encrypt and the secret key and encrypts the text with the key
         try {
-            Cipher aesCipher = Cipher.getInstance("AES", "BC");
+            Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
             aesCipher.init(Cipher.ENCRYPT_MODE, cryptKey);
             byte[] byteCipherText = aesCipher.doFinal(plainText.getBytes());
             return byteCipherText;
@@ -82,27 +84,40 @@ public class Encrypt {
         }
     }
 
-    public static byte[] encryptSessionKey(String keyString, PrivateKey cryptKey){
+    public static byte[] wrapSessionKey(SecretKey keyToWrap, PublicKey cryptKey) {
         try {
-            Cipher rsaCipher = Cipher.getInstance("RSA", "BC");
-            rsaCipher.init(Cipher.ENCRYPT_MODE, cryptKey);
-            byte[] cryptSessionKey = rsaCipher.doFinal(keyString.getBytes());
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
+            rsaCipher.init(Cipher.WRAP_MODE, cryptKey);
+            byte[] cryptSessionKey = rsaCipher.wrap(keyToWrap);
             return cryptSessionKey;
         } catch (Exception ex) {
-            System.out.println("E: Error occured during sessionkey encryption");
+            System.out.println("E: Error occurred during sessionkey wrapping");
             ex.printStackTrace();
             return null;
         }
     }
 
-    public static String decrypt(byte[] encryptedText, Key cryptKey) {         //takes the encrypted byte array and decrypts it with the secret key provided
+    public static String decrypt(byte[] encryptedText, SecretKey cryptKey) {         //takes the encrypted byte array and decrypts it with the secret key provided
         try {
-            Cipher rsaCipher = Cipher.getInstance("AES", "BC");
-            rsaCipher.init(Cipher.DECRYPT_MODE, cryptKey);
-            byte[] bytePlainText = rsaCipher.doFinal(encryptedText);
+            Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
+            aesCipher.init(Cipher.DECRYPT_MODE, cryptKey);
+            byte[] bytePlainText = aesCipher.doFinal(encryptedText);
             return new String(bytePlainText);
         } catch (Exception ex) {
             System.out.println("E: Error occured during decryption");
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static SecretKey unwrapSessionKey(byte[] wrappedSessionKey, PrivateKey cryptKey) {
+        try {
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
+            rsaCipher.init(Cipher.UNWRAP_MODE, cryptKey);
+            SecretKey sessionKey = (SecretKey) rsaCipher.unwrap(wrappedSessionKey, "RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", Cipher.SECRET_KEY);
+            return sessionKey;
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred during sessionkey unwrapping");
             ex.printStackTrace();
             return null;
         }
@@ -133,7 +148,9 @@ public class Encrypt {
                 PrivateKey privKey = (PrivateKey) ks.getKey("private-key", password);
                 return privKey;
             } else {
-                PublicKey pubKey = (PublicKey) ks.getKey("public-key", password);
+                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(conf.getProperty("PUBKEY")));
+                PublicKey pubKey = (PublicKey) ois.readObject();
+                ois.close();
                 return pubKey;
             }
         } catch (Exception ex) {
@@ -156,15 +173,15 @@ public class Encrypt {
         }
     }
 
-    public static String storeTextAndKey(String cryptText, SecretKey sessionKey, PrivateKey privKey) {
-        String  cryptSessionKey = bytesToHex(encryptSessionKey(sessionKey.toString(), privKey));
+    public static String storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey) {
+        String cryptSessionKey = bytesToHex(wrapSessionKey(textAndKey.sessionKey, pubKey));
         String time = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now());
         Properties conf = new Properties();
 
         try {
             FileWriter wr = new FileWriter(time + ".crypt", true);
             BufferedWriter bwr = new BufferedWriter(wr);
-            conf.setProperty("TEXT", cryptText);
+            conf.setProperty("TEXT", textAndKey.text);
             conf.setProperty("SESSIONKEY", cryptSessionKey);
             conf.store(bwr, "");
             return time + ".crypt";
@@ -173,5 +190,32 @@ public class Encrypt {
             ex.printStackTrace();
             return null;
         }
+    }
+
+    public static TextAndKey getTextAndKey(String path, PrivateKey cryptKey) {
+        Properties conf = new Properties();
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(path));
+            conf.load(br);
+            String cryptSessionKey = conf.getProperty("SESSIONKEY");
+            SecretKey sessionKey = unwrapSessionKey(hexToBytes(cryptSessionKey), cryptKey);
+            String cryptText = conf.getProperty("TEXT");
+            return new TextAndKey(cryptText, sessionKey);
+        } catch (IOException ex) {
+            System.out.println("E: Error while getting sessionKey and encrypted text");
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static class TextAndKey {
+        public TextAndKey(String newText, SecretKey newSessionKey) {
+            text = newText;
+            sessionKey = newSessionKey;
+        }
+
+        private String text;
+        private SecretKey sessionKey;
     }
 }
