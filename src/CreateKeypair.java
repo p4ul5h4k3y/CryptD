@@ -2,6 +2,9 @@
 //This class creates and stores the keypair for encryption and saves the path to the public and private keys in configuration.conf
 
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.x509.X509V1CertificateGenerator;
+import javax.security.auth.x500.X500Principal;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
@@ -9,32 +12,27 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
-import org.bouncycastle.x509.X509V1CertificateGenerator;
-import javax.security.auth.x500.X500Principal;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 public class CreateKeypair {
     static Scanner sc = new Scanner(System.in);
 
-    public static void main(String[] args) throws NoSuchAlgorithmException {
+    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchProviderException {
+        Security.addProvider(new BouncyCastleProvider());
+
         String path = parseArgs(args, "-p");
         if (path.equals("NO ARGS")) {
             System.out.println("E: Path argument necessary to create keypair");
             System.exit(0);
         }
         String pass1 = getPassword();
-        createKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
+        genAndStoreKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
     }
 
 
-    public static void createKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException {
-        Security.addProvider(new BouncyCastleProvider());
-
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-
-        SecureRandom random = createFixedRandom();
-        generator.initialize(4096, random);
+    public static void genAndStoreKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException, NoSuchProviderException {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
+        generator.initialize(4096);
 
         KeyPair pair = generator.generateKeyPair();
         PublicKey pubKey = pair.getPublic();
@@ -43,27 +41,7 @@ public class CreateKeypair {
         System.out.println("Public and Private keys have been generated successfully");
 
         try {
-            X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
-
-            X500Principal dnName = new X500Principal("CN=ROOT");
-            Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
-            Date validityEndDate = new Date(System.currentTimeMillis() + 3 * 365 * 24 * 60 * 60 * 1000);
-
-            certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-            certGen.setSubjectDN(dnName);
-            certGen.setIssuerDN(dnName);
-            certGen.setNotBefore(validityBeginDate);
-            certGen.setNotAfter(validityEndDate);
-            certGen.setPublicKey(pubKey);
-            certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
-
-            X509Certificate rootCertificate = certGen.generate(privKey, "BC");
-            X509Certificate middleCertificate = certGen.generate( privKey, "BC");
-
-            X509Certificate[] chain = new X509Certificate[2];
-            chain[0] = rootCertificate;
-            chain[1] = middleCertificate;
-
+            X509Certificate[] chain = genCertChain(pubKey, privKey);
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             char[] pwdChars = password.toCharArray();
             ks.load(null, pwdChars);
@@ -102,44 +80,34 @@ public class CreateKeypair {
         }
     }
 
-    public static SecureRandom createFixedRandom() {
-        return new FixedRand();
-    }
+    public static X509Certificate[] genCertChain(PublicKey pubKey, PrivateKey privKey) {
+        try {
+            X509V1CertificateGenerator certGen = new X509V1CertificateGenerator();
 
-    private static class FixedRand extends SecureRandom {
+            X500Principal dnName = new X500Principal("CN=ROOT");
+            Date validityBeginDate = new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000);
+            Date validityEndDate = new Date(System.currentTimeMillis() + 3 * 365 * 24 * 60 * 60 * 1000);
 
-        MessageDigest sha;
-        byte[] state;
+            certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
+            certGen.setSubjectDN(dnName);
+            certGen.setIssuerDN(dnName);
+            certGen.setNotBefore(validityBeginDate);
+            certGen.setNotAfter(validityEndDate);
+            certGen.setPublicKey(pubKey);
+            certGen.setSignatureAlgorithm("SHA256WithRSAEncryption");
 
-        FixedRand() {
-            try {
-                this.sha = MessageDigest.getInstance("SHA-1");
-                this.state = sha.digest();
-            } catch (NoSuchAlgorithmException ex) {
-                System.out.println("E: Can't find SHA-1!");
-                ex.printStackTrace();
-            }
-        }
+            X509Certificate rootCertificate = certGen.generate(privKey, "BC");
+            X509Certificate middleCertificate = certGen.generate(privKey, "BC");
 
-        public void nextBytes(byte[] bytes) {
+            X509Certificate[] chain = new X509Certificate[2];
+            chain[0] = rootCertificate;
+            chain[1] = middleCertificate;
 
-            int off = 0;
-
-            sha.update(state);
-
-            while (off < bytes.length) {
-                state = sha.digest();
-
-                if (bytes.length - off > state.length) {
-                    System.arraycopy(state, 0, bytes, off, state.length);
-                } else {
-                    System.arraycopy(state, 0, bytes, off, bytes.length - off);
-                }
-
-                off += state.length;
-
-                sha.update(state);
-            }
+            return chain;
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred during certificate generation");
+            ex.printStackTrace();
+            return null;
         }
     }
 
