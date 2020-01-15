@@ -5,3 +5,4 @@ store.jks
 configuration.conf
 key.pub
 *.crypt
+src/dependencies/
