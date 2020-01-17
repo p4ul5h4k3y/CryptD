@@ -21,62 +21,81 @@ public class Encrypt {
 
     public static void main(String[] args) {       //this function takes care of user interaction
         Security.addProvider(new BouncyCastleProvider());
-
         SecretKey sessionKey = genSessionKey();
-        System.out.println("Welcome to the Encryption Program");
-        while (true) {
-            System.out.println("1. Encrypt text \n 2. Decrypt text \n\n Enter Selection : ");
-            String option = sc.nextLine();
-            if (option.equals("1")) {
-                PublicKey key = (PublicKey) getKey(false);
-                String toEncrypt = getPlainText();
-                byte[] encrypted = encrypt(toEncrypt, sessionKey);
-                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), sessionKey), key);
-                System.out.println("\nSaved encrypted text to file : " + filename);
-                System.out.println("\n\n1. Encrypt/Decrypt another message\n2. Exit\n\nEnter Selection : ");
-                option = sc.nextLine();
-                if (option.equals("2")) {
-                    System.out.println("Exiting...");
-                    System.exit(0);
-                } else if (option.equals("1")) {
-                    System.out.println("Redirecting...");
-                } else {
-                    System.out.println("Invalid Option!\nRedirecting...");
-                }
-            } else if (option.equals("2")) {
-                System.out.println("Enter the path to the .crypt file : ");
-                String path = (sc.nextLine());
+
+
+        String[] flags = {"-d", "-e", "-g", "f", "-h"};
+        ArgCheck checker = new ArgCheck(flags);
+
+        try {
+            if (!checker.checkIfPresent(args[0])) {
+                System.out.println(args[1]);
+                System.out.println("E: Argument invalid");
+                printUsage();
+                System.exit(1);
+            }
+        } catch (ArrayIndexOutOfBoundsException ex) {
+            System.out.println("E: No arguments");
+            printUsage();
+            System.exit(1);
+        }
+
+        if (checker.checkIfHelp(args)) {
+            printUsage();
+        }
+
+        ArgCheck.BoolAndPos decryptCheck = checker.checkIfDecrypt(args);
+        if (decryptCheck.bool) {
+            try {
+                String path = args[decryptCheck.pos + 1];
                 PrivateKey key = (PrivateKey) getKey(true);
                 TextAndKey cryptTextAndKey = getTextAndKey(path, key);
+                assert cryptTextAndKey != null;
                 SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
                 String plainText = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);
-                System.out.println("Decrypted Text : " + plainText);
-                System.out.println("\n\n1. Encrypt/Decrypt another message\n2. Exit\n\nEnter Selection : ");
-                option = sc.nextLine();
-                if (option.equals("2")) {
-                    System.out.println("Exiting...");
-                    System.exit(0);
-                } else if (option.equals("1")) {
-                    System.out.println("Redirecting...");
+                ArgCheck.BoolAndPos fileCheck = checker.checkIfPath(args);
+                if (fileCheck.bool) {
+                    String filename = args[fileCheck.pos + 1];
+                    FileWriter wr = new FileWriter(filename);
+                    assert plainText != null;
+                    wr.write(plainText);
+                    wr.close();
+                    System.out.println("Decrypted Text written to file: " + filename);
                 } else {
-                    System.out.println("Invalid Option!\nRedirecting...");
+                    System.out.println("Decrypted Text : " + plainText);
                 }
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                System.out.println("E: Path to .crypt file required");
+            } catch (IOException ex) {
+                System.out.println("E: Error while writing output to file");
+            }
+        }
+
+        if (checker.checkIfEncrypt(args)) {
+            PublicKey key = (PublicKey) getKey(false);
+            String toEncrypt = getPlainText();
+            byte[] encrypted = encrypt(toEncrypt, sessionKey);
+            ArgCheck.BoolAndPos fileCheck = checker.checkIfPath(args);
+            if (fileCheck.bool) {
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), sessionKey), key, args[fileCheck.pos + 1]);
+                System.out.println("\nSaved encrypted text to file : " + filename);
+            } else {
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), sessionKey), key, DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()));
+                System.out.println("\nSaved encrypted text to file : " + filename);
             }
         }
     }
 
     public static String getPlainText() {       //receives plain text to encrypt and returns it
         System.out.println("Enter the text you wish to Encrypt : ");
-        String plainText = sc.nextLine();
-        return plainText;
+        return sc.nextLine();
     }
 
     public static byte[] encrypt(String plainText, SecretKey cryptKey) {         //takes the plaintext to encrypt and the secret key and encrypts the text with the key
         try {
             Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
             aesCipher.init(Cipher.ENCRYPT_MODE, cryptKey);
-            byte[] byteCipherText = aesCipher.doFinal(plainText.getBytes());
-            return byteCipherText;
+            return aesCipher.doFinal(plainText.getBytes());
         } catch (Exception ex) {
             System.out.println("E: Error occured during text encryption");
             ex.printStackTrace();
@@ -88,8 +107,7 @@ public class Encrypt {
         try {
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
             rsaCipher.init(Cipher.WRAP_MODE, cryptKey);
-            byte[] cryptSessionKey = rsaCipher.wrap(keyToWrap);
-            return cryptSessionKey;
+            return rsaCipher.wrap(keyToWrap);
         } catch (Exception ex) {
             System.out.println("E: Error occurred during sessionkey wrapping");
             ex.printStackTrace();
@@ -114,8 +132,7 @@ public class Encrypt {
         try {
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
             rsaCipher.init(Cipher.UNWRAP_MODE, cryptKey);
-            SecretKey sessionKey = (SecretKey) rsaCipher.unwrap(wrappedSessionKey, "RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", Cipher.SECRET_KEY);
-            return sessionKey;
+            return (SecretKey) rsaCipher.unwrap(wrappedSessionKey, "RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", Cipher.SECRET_KEY);
         } catch (Exception ex) {
             System.out.println("E: Error occurred during sessionkey unwrapping");
             ex.printStackTrace();
@@ -145,8 +162,7 @@ public class Encrypt {
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(new FileInputStream(ksPath), password);
             if (isPrivate) {
-                PrivateKey privKey = (PrivateKey) ks.getKey("private-key", password);
-                return privKey;
+                return ks.getKey("private-key", password);
             } else {
                 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(conf.getProperty("PUBKEY")));
                 PublicKey pubKey = (PublicKey) ois.readObject();
@@ -164,8 +180,7 @@ public class Encrypt {
         try {
             KeyGenerator gen = KeyGenerator.getInstance("AES", "BC");
             gen.init(256);
-            SecretKey sec = gen.generateKey();
-            return sec;
+            return gen.generateKey();
         } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
             System.out.println("E: Error while generating session key");
             ex.printStackTrace();
@@ -173,18 +188,18 @@ public class Encrypt {
         }
     }
 
-    public static String storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey) {
+    public static String storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey, String filename) {
         String cryptSessionKey = bytesToHex(wrapSessionKey(textAndKey.sessionKey, pubKey));
-        String time = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now());
+        //String time = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now());
         Properties conf = new Properties();
 
         try {
-            FileWriter wr = new FileWriter(time + ".crypt", true);
+            FileWriter wr = new FileWriter(filename + ".crypt", true);
             BufferedWriter bwr = new BufferedWriter(wr);
             conf.setProperty("TEXT", textAndKey.text);
             conf.setProperty("SESSIONKEY", cryptSessionKey);
             conf.store(bwr, "");
-            return time + ".crypt";
+            return filename;
         } catch (IOException ex) {
             System.out.println("E: Error occurred while writing encrypted text to file");
             ex.printStackTrace();
@@ -217,5 +232,15 @@ public class Encrypt {
 
         private String text;
         private SecretKey sessionKey;
+    }
+
+    public static void printUsage() {
+        System.out.println("Usage: encrypt [OPTION]... [ARGS]... \n" +
+                "      -d [path-to-encrypted-text]       set mode to decrypt\n" +
+                "      -e                                set mode to encrypt\n" +
+                "      -g                                generate keypair for encryption\n" +
+                "      -f [path-to-file]                 set path for saving message to (default is current-dir/date_time) when encrypting\n" +
+                "                                            when decrypting it saves the decrypted message to the file\n" +
+                "      -h                                display this info and exit");
     }
 }
