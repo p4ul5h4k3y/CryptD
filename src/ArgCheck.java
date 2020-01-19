@@ -72,4 +72,14 @@ public class ArgCheck {
         public boolean bool;
         public int pos;
     }
+
+    public static void printUsage() {
+        System.out.println("Usage: encrypt [OPTION]... [ARGS]... \n" +
+                "      -d [path-to-encrypted-text]       set mode to decrypt\n" +
+                "      -e                                set mode to encrypt\n" +
+                "      -g                                generate keypair for encryption\n" +
+                "      -f [path-to-file]                 set path for saving message to (default is current-dir/date_time) when encrypting\n" +
+                "                                            when decrypting it saves the decrypted message to the file\n" +
+                "      -h                                display this info and exit");
+    }
 }
