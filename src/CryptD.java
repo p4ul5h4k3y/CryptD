@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This file is the main class of the EncryptionCli project. It handles the encryption of text.
+//This file is the main class of the CryptD project. It handles the encryption of text.
 
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -15,7 +15,7 @@ import java.util.Properties;
 import java.util.Scanner;
 
 
-public class Encrypt {
+public class CryptD {
     static Scanner sc = new Scanner(System.in);
     static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/configuration.conf";
 
