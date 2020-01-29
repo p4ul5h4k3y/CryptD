@@ -6,3 +6,4 @@ configuration.conf
 key.pub
 *.crypt
 src/dependencies/
+plan
