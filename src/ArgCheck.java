@@ -2,6 +2,8 @@
 //This class provides functions and classes useful for checking arguments in the main java class
 
 
+import datatypes.*;
+
 public class ArgCheck {
     public ArgCheck(String[] newArgList) {
         argList = newArgList;

@@ -1,3 +1,5 @@
+package datatypes;
+
 public class BoolAndFilename{
     public BoolAndFilename(boolean newBool, String newFilename) {
         bool = newBool;

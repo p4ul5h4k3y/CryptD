@@ -1,3 +1,5 @@
+package datatypes;
+
 import javax.crypto.SecretKey;
 
 public class TextAndKey {

@@ -1,3 +1,5 @@
+package datatypes;
+
 public class BoolAndPos {
     public BoolAndPos(boolean newBool, int newPos) {
         bool = newBool;
