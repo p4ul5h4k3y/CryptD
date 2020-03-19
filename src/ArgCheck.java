@@ -23,24 +23,17 @@ public class ArgCheck {
         return false;
     }
 
-    public BoolAndPos checkIfDecrypt(String[] toCheck) {
+    public BoolAndPos checkIfEncrypt(String[] toCheck) {
         for (int i = 0; i < toCheck.length; i++) {
             String arg = toCheck[i];
             if (arg.equals("-d")) {
-                return new BoolAndPos(true, i);
+                return new BoolAndPos(false, i);
+            }
+            else if (arg.equals("-e")) {
+                return new BoolAndPos(true, 0);
             }
         }
-        return new BoolAndPos(false, 69420);
-    }
-
-    public boolean checkIfEncrypt(String[] toCheck) {
-        for (int i = 0; i < toCheck.length; i++) {
-            String arg = toCheck[i];
-            if (arg.equals("-e")) {
-                return true;
-            }
-        }
-        return false;
+        return null;
     }
 
     public boolean checkIfHelp(String[] toCheck) {
@@ -61,16 +54,6 @@ public class ArgCheck {
             }
         }
         return new BoolAndPos(false, 69420);
-    }
-
-    public class BoolAndPos {
-        public BoolAndPos(boolean newBool, int newPos) {
-            bool = newBool;
-            pos = newPos;
-        }
-
-        public boolean bool;
-        public int pos;
     }
 
     public static void printUsage() {
