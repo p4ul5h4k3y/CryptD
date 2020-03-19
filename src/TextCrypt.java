@@ -1,6 +1,7 @@
 //Written by Paul Schakel
 //This contains the code used for encrypting and decrypting text
 
+import datatypes.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

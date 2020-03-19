@@ -2,6 +2,7 @@
 //This file is the main class of the CryptD project. It handles the options and executes code accordingly
 
 
+import datatypes.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
