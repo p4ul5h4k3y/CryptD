@@ -53,7 +53,7 @@ public class ArgCheck {
                 return new BoolAndPos(true, i);
             }
         }
-        return new BoolAndPos(false, 69420);
+        return new BoolAndPos(false, 0);
     }
 
     public static void printUsage() {
