@@ -13,10 +13,10 @@ import java.util.Scanner;
 public class CryptD {
     static Scanner sc = new Scanner(System.in);
     static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/configuration.conf";
-    static SecretKey sessionKey = genSessionKey();
 
     public static void main(String[] args) {       //this function takes care of user interaction
         Security.addProvider(new BouncyCastleProvider());
+        SecretKey sessionKey = genSessionKey();
 
         String[] flags = {"-d", "-e", "-g", "f", "-h"};
         ArgCheck checker = new ArgCheck(flags);
@@ -38,9 +38,10 @@ public class CryptD {
 
         if (checker.checkIfHelp(args)) {
             ArgCheck.printUsage();
+            System.exit(0);
         }
 
-        new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos]), new BoolAndFilename(fileCheck.bool, args[fileCheck.pos]));
+        new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(fileCheck.bool, args[fileCheck.pos + 1]), sessionKey);
     }
 
     public static byte[] wrapSessionKey(SecretKey keyToWrap, PublicKey cryptKey) {      //encrpyts the AES-256 key with RSA-4096 for transport

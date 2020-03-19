@@ -1,29 +1,29 @@
 //Written by Paul Schakel
 //This contains the code used for encrypting and decrypting text
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Properties;
 
 public class TextCrypt {
-    public TextCrypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath) {
+    public TextCrypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath, SecretKey currentSessionKey) {
+        Security.addProvider(new BouncyCastleProvider());
+
         if (isEncrypt.bool) {
             PublicKey key = (PublicKey) getKey(false);
             String toEncrypt = TextCrypt.getPlainText();
-            byte[] encrypted = TextCrypt.encrypt(toEncrypt, CryptD.sessionKey);
+            byte[] encrypted = TextCrypt.encrypt(toEncrypt, currentSessionKey);
             if (hasFilePath.bool) {
-                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), CryptD.sessionKey), key, hasFilePath.filename);
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, hasFilePath.filename);
                 System.out.println("\nSaved encrypted text to file : " + filename);
             } else {
-                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), CryptD.sessionKey), key, DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()));
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()));
                 System.out.println("\nSaved encrypted text to file : " + filename);
             }
         } else {
