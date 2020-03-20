@@ -24,7 +24,7 @@ public class TextCrypt {
                 String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, hasFilePath.filename);
                 System.out.println("\nSaved encrypted text to file : " + filename);
             } else {
-                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()));
+                String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()) + ".crypt");
                 System.out.println("\nSaved encrypted text to file : " + filename);
             }
         } else {
@@ -45,8 +45,10 @@ public class TextCrypt {
                 }
             } catch (ArrayIndexOutOfBoundsException ex) {
                 System.out.println("E: Path to .crypt file required");
+                System.exit(1);
             } catch (IOException ex) {
                 System.out.println("E: Error while writing output to file");
+                System.exit(1);
             }
         }
 
@@ -64,7 +66,7 @@ public class TextCrypt {
             return aesCipher.doFinal(plainText.getBytes());
         } catch (Exception ex) {
             System.out.println("E: Error occurred during text encryption");
-            ex.printStackTrace();
+            System.exit(1);
             return null;
         }
     }
@@ -77,7 +79,7 @@ public class TextCrypt {
             return new String(bytePlainText);
         } catch (Exception ex) {
             System.out.println("E: Error occurred during decryption");
-            ex.printStackTrace();
+            System.exit(1);
             return null;
         }
     }
@@ -113,7 +115,7 @@ public class TextCrypt {
             }
         } catch (Exception ex) {
             System.out.println("E: Error loading keystore or private key");
-            ex.printStackTrace();
+            System.exit(1);
             return null;
         }
     }
@@ -124,7 +126,7 @@ public class TextCrypt {
         Properties conf = new Properties();
 
         try {
-            FileWriter wr = new FileWriter(filename + ".crypt", true);
+            FileWriter wr = new FileWriter(filename, true);
             BufferedWriter bwr = new BufferedWriter(wr);
             conf.setProperty("TEXT", textAndKey.text);
             conf.setProperty("SESSIONKEY", cryptSessionKey);
@@ -132,7 +134,7 @@ public class TextCrypt {
             return filename;
         } catch (IOException ex) {
             System.out.println("E: Error occurred while writing encrypted text to file");
-            ex.printStackTrace();
+            System.exit(1);
             return null;
         }
     }
@@ -149,7 +151,7 @@ public class TextCrypt {
             return new TextAndKey(cryptText, sessionKey);
         } catch (IOException ex) {
             System.out.println("E: Error while getting sessionKey and encrypted text");
-            ex.printStackTrace();
+            System.exit(1);
             return null;
         }
     }
