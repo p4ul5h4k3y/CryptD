@@ -122,7 +122,7 @@ public class TextCrypt {
 
 
     public static String storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey, String filename) {
-        String cryptSessionKey = bytesToHex(CryptD.wrapSessionKey(textAndKey.sessionKey, pubKey));
+        String cryptSessionKey = bytesToHex(wrapSessionKey(textAndKey.sessionKey, pubKey));
         Properties conf = new Properties();
 
         try {
@@ -146,12 +146,36 @@ public class TextCrypt {
             BufferedReader br = new BufferedReader(new FileReader(path));
             conf.load(br);
             String cryptSessionKey = conf.getProperty("SESSIONKEY");
-            SecretKey sessionKey = CryptD.unwrapSessionKey(hexToBytes(cryptSessionKey), cryptKey);
+            SecretKey sessionKey = unwrapSessionKey(hexToBytes(cryptSessionKey), cryptKey);
             String cryptText = conf.getProperty("TEXT");
             return new TextAndKey(cryptText, sessionKey);
         } catch (IOException ex) {
             System.out.println("E: Error while getting sessionKey and encrypted text");
             System.exit(1);
+            return null;
+        }
+    }
+
+    public static byte[] wrapSessionKey(SecretKey keyToWrap, PublicKey cryptKey) {      //encrpyts the AES-256 key with RSA-4096 for transport
+        try {
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
+            rsaCipher.init(Cipher.WRAP_MODE, cryptKey);
+            return rsaCipher.wrap(keyToWrap);
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred during sessionkey wrapping");
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static SecretKey unwrapSessionKey(byte[] wrappedSessionKey, PrivateKey cryptKey) {       //unencrypts the AES-256 key which is encrypted with RSA-4096 for transport
+        try {
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
+            rsaCipher.init(Cipher.UNWRAP_MODE, cryptKey);
+            return (SecretKey) rsaCipher.unwrap(wrappedSessionKey, "RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", Cipher.SECRET_KEY);
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred during sessionkey unwrapping");
+            ex.printStackTrace();
             return null;
         }
     }
