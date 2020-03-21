@@ -19,7 +19,7 @@ public class CryptD {
         Security.addProvider(new BouncyCastleProvider());
         SecretKey sessionKey = genSessionKey();
 
-        String[] flags = {"-d", "-e", "-g", "f", "-h"};
+        String[] flags = {"-d", "-e", "-g", "-p", "-h"};
         ArgCheck checker = new ArgCheck(flags);
         BoolAndPos encryptCheck = checker.checkIfEncrypt(args);
         BoolAndPos fileCheck = checker.checkIfPath(args);
@@ -44,31 +44,6 @@ public class CryptD {
 
         new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(fileCheck.bool, args[fileCheck.pos + 1]), sessionKey);
     }
-
-    public static byte[] wrapSessionKey(SecretKey keyToWrap, PublicKey cryptKey) {      //encrpyts the AES-256 key with RSA-4096 for transport
-        try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
-            rsaCipher.init(Cipher.WRAP_MODE, cryptKey);
-            return rsaCipher.wrap(keyToWrap);
-        } catch (Exception ex) {
-            System.out.println("E: Error occurred during sessionkey wrapping");
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    public static SecretKey unwrapSessionKey(byte[] wrappedSessionKey, PrivateKey cryptKey) {       //unencrypts the AES-256 key which is encrypted with RSA-4096 for transport
-        try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
-            rsaCipher.init(Cipher.UNWRAP_MODE, cryptKey);
-            return (SecretKey) rsaCipher.unwrap(wrappedSessionKey, "RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", Cipher.SECRET_KEY);
-        } catch (Exception ex) {
-            System.out.println("E: Error occurred during sessionkey unwrapping");
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
 
     public static SecretKey genSessionKey() {       //generates the AES-256 bit key which encrypts the text
         try {
