@@ -10,15 +10,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.security.*;
 
-public class FileCrypt extends TextCrypt {
+public class FileCrypt extends Crypt {
     public FileCrypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath, SecretKey currentSessionKey) {
-        super(isEncrypt, hasFilePath, currentSessionKey);
         Security.addProvider(new BouncyCastleProvider());
 
         if (isEncrypt.bool) {
             PublicKey key = (PublicKey) getKey(false);
             File toEncrypt = new File(isEncrypt.filename);
-            byte[] encrypted = fileEncrypt(toEncrypt, currentSessionKey);
+            byte[] encrypted = encrypt(toEncrypt, currentSessionKey);
             if (hasFilePath.bool) {
                 String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey), key, hasFilePath.filename);
                 System.out.println("\nSaved encrypted text to file : " + filename);
@@ -32,7 +31,7 @@ public class FileCrypt extends TextCrypt {
                 TextAndKey cryptTextAndKey = TextCrypt.getTextAndKey(isEncrypt.filename, key);
                 assert cryptTextAndKey != null;
                 SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
-                byte[] plainFileBytes = fileDecrypt(TextCrypt.hexToBytes(cryptTextAndKey.text), oldSessionKey);
+                byte[] plainFileBytes = decrypt(TextCrypt.hexToBytes(cryptTextAndKey.text), oldSessionKey);
                 if (hasFilePath.bool) {
                     FileOutputStream fos = new FileOutputStream(hasFilePath.filename);
                     assert plainFileBytes != null;
@@ -57,7 +56,7 @@ public class FileCrypt extends TextCrypt {
         }
     }
 
-    public static byte[] fileEncrypt(File plainFile, SecretKey cryptKey) {
+    public static byte[] encrypt(File plainFile, SecretKey cryptKey) {
         try {
             byte[] fileContent = Files.readAllBytes(plainFile.toPath());
 
@@ -71,7 +70,7 @@ public class FileCrypt extends TextCrypt {
         }
     }
 
-    public static byte[] fileDecrypt(byte[] encryptedFile, SecretKey cryptKey) {         //takes the encrypted byte array and decrypts it with the secret key provided
+    public static byte[] decrypt(byte[] encryptedFile, SecretKey cryptKey) {         //takes the encrypted byte array and decrypts it with the secret key provided
         try {
             Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
             aesCipher.init(Cipher.DECRYPT_MODE, cryptKey);
