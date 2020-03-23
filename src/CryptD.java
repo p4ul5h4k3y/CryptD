@@ -4,15 +4,12 @@
 
 import datatypes.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.*;
-import java.util.Scanner;
 
 
 public class CryptD {
-    static Scanner sc = new Scanner(System.in);
     static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/configuration.conf";
 
     public static void main(String[] args) {       //this function takes care of user interaction
@@ -22,7 +19,8 @@ public class CryptD {
         String[] flags = {"-d", "-e", "-g", "-p", "-h"};
         ArgCheck checker = new ArgCheck(flags);
         BoolAndPos encryptCheck = checker.checkIfEncrypt(args);
-        BoolAndPos fileCheck = checker.checkIfPath(args);
+        BoolAndPos pathCheck = checker.checkIfPath(args);
+        BoolAndPos fileCheck = checker.checkIfFile(args);
 
         try {
             if (!checker.checkIfPresent(args[0])) {
@@ -42,7 +40,11 @@ public class CryptD {
             System.exit(0);
         }
 
-        new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(fileCheck.bool, args[fileCheck.pos + 1]), sessionKey);
+        if (fileCheck.bool) {
+            new FileCrypt(new BoolAndFilename(encryptCheck.bool, args[fileCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
+        } else {
+            new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
+        }
     }
 
     public static SecretKey genSessionKey() {       //generates the AES-256 bit key which encrypts the text
