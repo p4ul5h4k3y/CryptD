@@ -1,8 +1,8 @@
 //Written by Paul Schakel
-//This class contains the important functions for TextCrypt and FileCrypt
+//This class is the parent of TextCrypt and FileCrypt and handles the decryption of data
 
 
-import datatypes.TextAndKey;
+import datatypes.*;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
@@ -14,13 +14,30 @@ import java.security.PublicKey;
 import java.util.Properties;
 
 public class Crypt {
-    public Crypt() {}
+    public Crypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath) {
+        if (!isEncrypt.bool) {
+            try {
+                PrivateKey key = (PrivateKey) getKey(true);             //gets the RSA key for data decryption
+                TextAndKey cryptTextAndKey = TextCrypt.getTextAndKey(isEncrypt.filename, key);
+                assert cryptTextAndKey != null;
+                SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
+                byte[] decryptedData = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);
+                if (!hasFilePath.bool) {
+                    hasFilePath.filename = isEncrypt.filename;
+                }
+                saveDecryptedData(hasFilePath, cryptTextAndKey.metadata, decryptedData);
+            } catch (ArrayIndexOutOfBoundsException ex) {
+                System.out.println("E: Path to .crypt file required");
+                System.exit(1);
+            }
+        }
+    }
 
-    public static String bytesToHex(byte[] hash) {         //makes the encrypted byte array into a hex string
+    public static String bytesToHex(byte[] hash) {         //converts a byte array into a hex string
         return DatatypeConverter.printHexBinary(hash);
     }
 
-    public static byte[] hexToBytes(String hex) {         //converts the hex string back to a byte array
+    public static byte[] hexToBytes(String hex) {         //converts a hex string back to a byte array
         byte[] bytes = new byte[hex.length() / 2];
         for (int i = 0; i < bytes.length; i++) {
             bytes[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
@@ -62,6 +79,7 @@ public class Crypt {
             BufferedWriter bwr = new BufferedWriter(wr);
             conf.setProperty("TEXT", textAndKey.text);
             conf.setProperty("SESSIONKEY", cryptSessionKey);
+            conf.setProperty("META", textAndKey.metadata);
             conf.store(bwr, "");
             return filename;
         } catch (IOException ex) {
@@ -80,9 +98,10 @@ public class Crypt {
             String cryptSessionKey = conf.getProperty("SESSIONKEY");
             SecretKey sessionKey = unwrapSessionKey(hexToBytes(cryptSessionKey), cryptKey);
             String cryptText = conf.getProperty("TEXT");
-            return new TextAndKey(cryptText, sessionKey);
+            String meta = conf.getProperty("META");
+            return new TextAndKey(cryptText, sessionKey, meta);
         } catch (IOException ex) {
-            System.out.println("E: Error while getting sessionKey and encrypted text");
+            System.out.println("E: Error while getting sessionKey and encrypted text (the data you wanted to decrypt wasn't there)");
             System.exit(1);
             return null;
         }
@@ -100,7 +119,7 @@ public class Crypt {
         }
     }
 
-    public static SecretKey unwrapSessionKey(byte[] wrappedSessionKey, PrivateKey cryptKey) {       //unencrypts the AES-256 key which is encrypted with RSA-4096 for transport
+    public static SecretKey unwrapSessionKey(byte[] wrappedSessionKey, PrivateKey cryptKey) {       //decrypts the AES-256 key which is encrypted with RSA-4096 for transport
         try {
             Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
             rsaCipher.init(Cipher.UNWRAP_MODE, cryptKey);
@@ -109,6 +128,51 @@ public class Crypt {
             System.out.println("E: Error occurred during sessionkey unwrapping");
             System.exit(1);
             return null;
+        }
+    }
+
+    public static byte[] decrypt(byte[] encryptedFile, SecretKey cryptKey) {         //takes the encrypted byte array and decrypts it with the secret key provided
+        try {
+            Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
+            aesCipher.init(Cipher.DECRYPT_MODE, cryptKey);
+            return aesCipher.doFinal(encryptedFile);
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred during decryption");
+            System.exit(1);
+            return null;
+        }
+    }
+
+    public static void saveDecryptedData(BoolAndFilename hasPath, String metadata, byte[] decryptedData) {
+        if (hasPath.bool | metadata.equals("file/dir")) {
+            if (metadata.equals("text")) {
+                try {
+                    String plainText = new String(decryptedData);
+                    FileWriter wr = new FileWriter(hasPath.filename);
+                    wr.write(plainText);
+                    wr.close();
+                    System.out.println("Decrypted Text written to file: " + hasPath.filename);
+                } catch (IOException e) {
+                    System.out.println("E: Error while writing decrypted text to file");
+                    System.exit(1);
+                }
+            } else {
+                try {
+                    String filename = hasPath.filename;
+                    if (!hasPath.bool) {
+                        String[] splitFilename = new File(hasPath.filename).getName().split("\\.(?=[^\\.]+$)");
+                        filename = splitFilename[0];
+                    }
+                    FileCrypt.unzipAndWriteDir(decryptedData, filename);
+                    System.out.println("Decrypted File saved at: " + filename);
+                } catch (Exception e) {
+                    System.out.println("E: Error while writing decrypted data");
+                    System.exit(1);
+                }
+            }
+        } else {
+            String plaintext = new String(decryptedData);
+            System.out.println("Decrypted Text : " + plaintext);
         }
     }
 }
