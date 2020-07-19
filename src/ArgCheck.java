@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This class provides functions and classes useful for checking arguments in the main java class
+//This class provides methods and classes useful for checking arguments in the CryptD class
 
 
 import datatypes.*;
@@ -11,7 +11,7 @@ public class ArgCheck {
 
     public String[] argList;
 
-    public boolean checkIfPresent(String toCheck) {
+    public boolean checkIfPresent(String toCheck) {     //checks if an argument (toCheck) is present in an array of valid arguments (argList)
         int i = 0;
 
         while  (i < argList.length) {
@@ -25,7 +25,7 @@ public class ArgCheck {
         return false;
     }
 
-    public BoolAndPos checkIfEncrypt(String[] toCheck) {
+    public BoolAndPos checkIfEncrypt(String[] toCheck) {        //checks if the user wants to decrypt a .crypt file
         for (int i = 0; i < toCheck.length; i++) {
             String arg = toCheck[i];
             if (arg.equals("-d")) {
@@ -35,11 +35,8 @@ public class ArgCheck {
                 }
                 return new BoolAndPos(false, i);
             }
-            else if (arg.equals("-e")) {
-                return new BoolAndPos(true, -1);
-            }
         }
-        return null;
+        return new BoolAndPos(true, -1);
     }
 
     public boolean checkIfHelp(String[] toCheck) {
@@ -71,21 +68,11 @@ public class ArgCheck {
         return new BoolAndPos(false, -1);
     }
 
-    public boolean checkIfRecurs(String[] toCheck) {
-        for (String arg : toCheck) {
-            if (arg.equals("-r")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public static void printUsage() {
-        System.out.println("Usage: encrypt [OPTION]... [ARGS]... \n" +
-                "      -d [path-to-encrypted-text]       set mode to decrypt\n" +
+        System.out.println("Usage: encrypt [OPTION] [ARGS] \n" +
+                "      -d [path-to-encrypted-data]       set mode to decrypt\n" +
                 "      -e                                set mode to encrypt\n" +
-                "      -f [path-to-file]                 encrypt a specified file\n" +
-                "      -r                                used to specify recursive encryption of a directory\n" +
+                "      -f [path-to-file]                 encrypt a specified file or directory\n" +
                 "      -g                                generate keypair for encryption\n" +
                 "      -p [path-to-file]                 set path for saving message to (default is current-dir/date_time) when encrypting\n" +
                 "                                            when decrypting it saves the decrypted message to the file\n" +
