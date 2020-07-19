@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This class creates and stores the keypair for encryption and saves the path to the public and private keys in configuration.conf
+//This class creates and stores the keypair for encryption and saves the path to the public and private keys in TODO: set default
 
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
@@ -25,22 +24,27 @@ import java.util.Scanner;
 
 
 public class CreateKeypair {
-    static Scanner sc = new Scanner(System.in);
+    static Scanner sc = new Scanner(System.in);     //used to read the password from stdin
 
     public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchProviderException {
-        Security.addProvider(new BouncyCastleProvider());
+        Security.addProvider(new BouncyCastleProvider());       //needed for key generation
 
-        String path = parseArgs(args, "-g");
+        String path = parseArgs(args, "-g");        //gets the path to the configuration.conf file TODO: update with defaults
         if (path.equals("NO ARGS")) {
             System.out.println("E: Path argument necessary to create keypair");
             System.exit(1);
         }
         String pass1 = getPassword();
-        genAndStoreKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);
+        genAndStoreKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);   //TODO: remove hard-coded path
     }
 
 
     public static void genAndStoreKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException, NoSuchProviderException {
+
+        /* This code will generate an RSA-4096 key pair and store them in a java keystore (private)
+        * and a key.pub file (public). Then it will save the paths to key.pub and store.jks in configuration.conf
+        * TODO: probably need a better name for configuration.conf, and congruency in error checking (i.e. to printStackTrace or not)*/
+
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
         generator.initialize(4096);
 
@@ -51,7 +55,7 @@ public class CreateKeypair {
         System.out.println("Public and Private keys have been generated successfully");
 
         try {
-            X509Certificate[] chain = genCertChain(pubKey, privKey);
+            X509Certificate[] chain = genCertChain(pubKey, privKey);                //this stuff stores the private key in a secure keystore
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             char[] pwdChars = password.toCharArray();
             ks.load(null, pwdChars);
@@ -65,7 +69,7 @@ public class CreateKeypair {
         }
 
         try {
-            ObjectOutputStream oout = new ObjectOutputStream(new FileOutputStream(keyStorePath + "/key.pub"));
+            ObjectOutputStream oout = new ObjectOutputStream(new FileOutputStream(keyStorePath + "/key.pub"));      //and this stuff saves the public key to a plain file
             oout.writeObject(pubKey);
             oout.close();
         } catch (IOException ex) {
@@ -75,7 +79,7 @@ public class CreateKeypair {
 
 
         try {
-            Properties config = new Properties();
+            Properties config = new Properties();                                   //and this stuff writes the paths into configuration.conf TODO: still need better name
             FileInputStream fis = new FileInputStream(confPath);
             config.load(fis);
             fis.close();
@@ -90,7 +94,7 @@ public class CreateKeypair {
         }
     }
 
-    public static X509Certificate[] genCertChain(PublicKey pubKey, PrivateKey privKey) {
+    public static X509Certificate[] genCertChain(PublicKey pubKey, PrivateKey privKey) {        //creates the certificates for the keypair. TODO: set up with a cert authority
         try {
             SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
             X500Name dnName = new X500Name("CN=ROOT");
@@ -127,7 +131,7 @@ public class CreateKeypair {
         }
     }
 
-    public static String parseArgs(String[] args, String flag) {
+    public static String parseArgs(String[] args, String flag) {        //basically just gets the arg after the specified flag
         int i = 0;
         for (String arg : args) {
             if (arg.equals(flag)) {
@@ -139,7 +143,7 @@ public class CreateKeypair {
         return "NO ARGS";
     }
 
-    public static String getPassword() {        //gets the password which corresponds to the secret key
+    public static String getPassword() {        //prompts the user to enter a password to use for the locking of the keyStore. TODO: probably need to require a better password
         while (true) {
             System.out.println("Enter a password for key generation : ");
             String input1 = sc.nextLine();
