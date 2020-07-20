@@ -18,6 +18,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
 import java.util.Scanner;
@@ -144,14 +145,24 @@ public class CreateKeypair {
     }
 
     public static String getPassword() {        //prompts the user to enter a password to use for the locking of the keyStore. TODO: probably need to require a better password
+        String[] nums = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
+        String[] specialChars = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "~", "`", "{", "}", "[", "]", "|", ":", ";", "'", "\"", "<", ">", ",", ".", "?", "/", "-", "_", "+", "="};
+        String[] CAPITALS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
+
         while (true) {
             System.out.println("Enter a password for key generation : ");
-            String input1 = sc.nextLine();
+            String input1 = new String(System.console().readPassword());
             System.out.println("Enter the same password for confirmation : ");
-            String input2 = sc.nextLine();
+            String input2 = new String(System.console().readPassword());
             if (input1.equals(input2)) {
                 if (input1.length() < 8) {
                     System.out.println("Enter a longer password.");
+                } else if (checkIfCharInString(input1, CAPITALS)) {
+                    System.out.println("Your password contains no capital letters. Please capitalize some of your letters and try again.");
+                } else if (checkIfCharInString(input1, nums)) {
+                    System.out.println("Your password contains no numbers. Please add at least one more number and try again.");
+                } else if (checkIfCharInString(input1, specialChars)) {
+                    System.out.println("Your password contains no special characters. Please add at least one special character and try again.");
                 } else {
                     System.out.println("Password Confirmed");
                     return input1;
@@ -160,5 +171,15 @@ public class CreateKeypair {
                 System.out.println("Passwords did not match. Try Again.\n");
             }
         }
+    }
+
+    public static boolean checkIfCharInString(String toCheck, String[] list) {
+
+        for (String s : list) {
+            if (toCheck.contains(s)) {
+                return false;
+            }
+        }
+        return true;
     }
 }
