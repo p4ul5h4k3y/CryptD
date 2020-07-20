@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This file is the main class of the CryptD project. It handles the options and executes code accordingly
+//This file is the main class of the CryptoParrot project. It handles the options and executes code accordingly
 
 
 import datatypes.*;
@@ -9,7 +9,7 @@ import javax.crypto.SecretKey;
 import java.security.*;
 
 
-public class CryptD {
+public class CryptoParrot {
     static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/configuration.conf";     //path to config file -- TODO: need to specify default
 
     public static void main(String[] args) {       //this method checks arguments and passes them to the proper place

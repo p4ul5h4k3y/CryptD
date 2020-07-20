@@ -50,7 +50,7 @@ public class Crypt {
         char[] password = System.console().readPassword();
         try {
             Properties conf = new Properties();
-            conf.load(new FileInputStream(CryptD.path));
+            conf.load(new FileInputStream(CryptoParrot.path));
             String ksPath = conf.getProperty("KEYSTORE");
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(new FileInputStream(ksPath), password);
