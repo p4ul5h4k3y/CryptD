@@ -1,4 +1,4 @@
-# CryptD
+# CryptoParrot
 
 This is a simple project created to encrypt and decrypt text. It was written to be run by java version 8.
 

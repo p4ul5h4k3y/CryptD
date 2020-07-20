@@ -1,5 +1,5 @@
 //Written by Paul Schakel
-//This class provides methods and classes useful for checking arguments in the CryptD class
+//This class provides methods and classes useful for checking arguments in the CryptoParrot class
 
 
 import datatypes.*;
