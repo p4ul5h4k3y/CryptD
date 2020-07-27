@@ -2,8 +2,8 @@
 Cryptography.iml
 out/
 store.jks
-configuration.conf
-key.pub
+*.conf
+*.pub
 *.crypt
-src/dependencies/
+src/contacts/
 plan
