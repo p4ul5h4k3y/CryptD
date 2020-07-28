@@ -4,7 +4,8 @@ This is a simple project created to encrypt and decrypt text. It was written to 
 
 ### Todo
 
-1. Create client for sending and receiving encrypted messages on local LAN 
+1. Implement a way to encrypt data with somebody else's public key
+2. Create client for sending and receiving encrypted messages on local LAN 
 
 
 ### And If I get to It
