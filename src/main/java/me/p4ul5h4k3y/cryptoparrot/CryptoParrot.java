@@ -10,6 +10,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.*;
+import java.util.HashMap;
 
 
 public class CryptoParrot {
@@ -19,49 +20,57 @@ public class CryptoParrot {
         Security.addProvider(new BouncyCastleProvider());
         SecretKey sessionKey = genSessionKey();     //this is generated now and passed to TextCrypt and FileCrypt as arguments
 
-        String[] flags = {"-d", "-e", "-g", "-p", "-h", "f", "-x", "--name", "-i"};
-        ArgCheck checker = new ArgCheck(flags);
-        BoolAndPos encryptCheck = checker.checkIfEncrypt(args);
-        BoolAndPos pathCheck = checker.checkIfPath(args);
-        BoolAndPos fileCheck = checker.checkIfFile(args);
-        BoolAndPos importCheck = checker.checkIfImport(args);
-        BoolAndPos exportCheck = checker.checkIfExport(args);
-        BoolAndPos nameCheck = checker.checkIfName(args);
+        HashMap<String, Boolean> flags = new HashMap<String, Boolean>()
+        {{
+            put("-d", true);
+            put("-e", false);
+            put("-g", false);
+            put("-p", true);
+            put("-h", false);
+            put("-f", true);
+            put("-x", true);
+            put("--name", true);
+            put("-i", true);
+        }};
 
-        try {
-            if (!checker.checkIfPresent(args[0])) {     //makes sure that the first argument is a valid one
-                System.out.println(args[1]);
-                System.out.println("E: Argument invalid");
-                ArgCheck.printUsage();
-                System.exit(1);
-            }
-        } catch (ArrayIndexOutOfBoundsException ex) {   //shows error when no arguments are specified and prints usage
-            System.out.println("E: No arguments");
-            ArgCheck.printUsage();
-            System.exit(1);
-        }
+        ArgCheck checker = new ArgCheck(flags, args);
+        HashMap<String, BoolAndPos> checkedArgs = checker.returnCheckedArgs();
 
-        if (checker.checkIfHelp(args)) {
+        if (checkedArgs.get("-h").bool) {
             ArgCheck.printUsage();
             System.exit(0);
         }
 
-        if (fileCheck.bool) {       //creates an instance of FileCrypt if true or TextCrypt if false
-            new FileCrypt(new BoolAndFilename(encryptCheck.bool, args[fileCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
-        } else {
-            new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
+        if (checkedArgs.get("-e").bool | checkedArgs.get("-d").bool) {       //creates an instance of FileCrypt if true or TextCrypt if false
+            if (checkedArgs.get("-p").bool) {
+                if (checkedArgs.get("-f").bool) {
+                    new FileCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-f").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, args[checkedArgs.get("-p").pos]), sessionKey);
+                } else {
+                    new TextCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-d").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, args[checkedArgs.get("-p").pos]), sessionKey);
+                }
+            } else if (checkedArgs.get("-f").bool) {
+                new FileCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-f").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, "NO PATH"), sessionKey);
+            } else {
+                new TextCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-d").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, "NO PATH"), sessionKey);
+            }
         }
 
-        if (nameCheck.bool) {
-            new ContactUtils(new BoolAndFilename(exportCheck.bool, args[exportCheck.pos]), new BoolAndFilename(importCheck.bool, args[importCheck.pos]), args[nameCheck.pos]);
-        } else {
-            new ContactUtils(new BoolAndFilename(exportCheck.bool, args[exportCheck.pos]), new BoolAndFilename(importCheck.bool, args[importCheck.pos]), "NO NAME");
+        if (checkedArgs.get("-i").bool | checkedArgs.get("-x").bool) {
+            if (checkedArgs.get("-i").bool) {
+                if (checkedArgs.get("--name").bool) {
+                    new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-i").pos]), args[checkedArgs.get("--name").pos]);
+                } else {
+                    new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-i").pos]), "NO NAME");
+                }
+            } else {
+                new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-x").pos]), "NO NAME");
+            }
         }
     }
 
     public static SecretKey genSessionKey() {
-        /* This method generates the javax.crypto.SecretKey which is used
-        * to encrypt the RSA key before the encrypted data is saved */
+        /* This method generates the javax.crypto.SecretKey which is
+        * encrypted by the RSA key before the encrypted data is saved */
         try {
             KeyGenerator gen = KeyGenerator.getInstance("AES", "BC");
             gen.init(256);
