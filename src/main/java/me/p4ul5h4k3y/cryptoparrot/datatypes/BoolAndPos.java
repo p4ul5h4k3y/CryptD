@@ -1,4 +1,4 @@
-package datatypes;
+package main.java.datatypes;
 
 public class BoolAndPos {
     public BoolAndPos(boolean newBool, int newPos) {

@@ -1,7 +1,9 @@
-//Written by Paul Schakel
+package main.java;//Written by Paul Schakel
 //This contains the code used for encrypting and decrypting text
 
 import datatypes.*;
+import main.java.datatypes.BoolAndFilename;
+import main.java.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

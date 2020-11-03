@@ -1,4 +1,4 @@
-package datatypes;
+package main.java.datatypes;
 
 public class BoolAndFilename{
     public BoolAndFilename(boolean newBool, String newFilename) {

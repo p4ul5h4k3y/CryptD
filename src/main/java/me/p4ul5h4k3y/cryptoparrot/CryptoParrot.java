@@ -1,8 +1,10 @@
-//Written by Paul Schakel
+package main.java;//Written by Paul Schakel
 //This file is the main class of the CryptoParrot project. It handles the options and executes code accordingly
 
 
 import datatypes.*;
+import main.java.datatypes.BoolAndFilename;
+import main.java.datatypes.BoolAndPos;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -16,11 +18,14 @@ public class CryptoParrot {
         Security.addProvider(new BouncyCastleProvider());
         SecretKey sessionKey = genSessionKey();     //this is generated now and passed to TextCrypt and FileCrypt as arguments
 
-        String[] flags = {"-d", "-e", "-g", "-p", "-h", "f"};
+        String[] flags = {"-d", "-e", "-g", "-p", "-h", "f", "-x", "--name", "-i"};
         ArgCheck checker = new ArgCheck(flags);
         BoolAndPos encryptCheck = checker.checkIfEncrypt(args);
         BoolAndPos pathCheck = checker.checkIfPath(args);
         BoolAndPos fileCheck = checker.checkIfFile(args);
+        BoolAndPos importCheck = checker.checkIfImport(args);
+        BoolAndPos exportCheck = checker.checkIfExport(args);
+        BoolAndPos nameCheck = checker.checkIfName(args);
 
         try {
             if (!checker.checkIfPresent(args[0])) {     //makes sure that the first argument is a valid one
@@ -44,6 +49,12 @@ public class CryptoParrot {
             new FileCrypt(new BoolAndFilename(encryptCheck.bool, args[fileCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
         } else {
             new TextCrypt(new BoolAndFilename(encryptCheck.bool, args[encryptCheck.pos + 1]), new BoolAndFilename(pathCheck.bool, args[pathCheck.pos + 1]), sessionKey);
+        }
+
+        if (nameCheck.bool) {
+            new ContactUtils(new BoolAndFilename(exportCheck.bool, args[exportCheck.pos]), new BoolAndFilename(importCheck.bool, args[importCheck.pos]), args[nameCheck.pos]);
+        } else {
+            new ContactUtils(new BoolAndFilename(exportCheck.bool, args[exportCheck.pos]), new BoolAndFilename(importCheck.bool, args[importCheck.pos]), "NO NAME");
         }
     }
 

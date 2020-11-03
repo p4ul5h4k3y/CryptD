@@ -1,4 +1,4 @@
-//Written by Paul Schakel
+package main.java;//Written by Paul Schakel
 //This class creates and stores the keypair for encryption and saves the path to the public and private keys in TODO: set default
 
 

@@ -1,8 +1,11 @@
-//Written by Paul Schakel
+package main.java;//Written by Paul Schakel
 //This class is the parent of TextCrypt and FileCrypt and handles the decryption of data
 
 
 import datatypes.*;
+import main.java.datatypes.BoolAndFilename;
+import main.java.datatypes.TextAndKey;
+
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
