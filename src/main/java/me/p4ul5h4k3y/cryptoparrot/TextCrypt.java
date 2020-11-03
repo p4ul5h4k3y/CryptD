@@ -1,9 +1,10 @@
-package main.java;//Written by Paul Schakel
+package me.p4ul5h4k3y.cryptoparrot;
+
+//Written by Paul Schakel
 //This contains the code used for encrypting and decrypting text
 
-import datatypes.*;
-import main.java.datatypes.BoolAndFilename;
-import main.java.datatypes.TextAndKey;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
