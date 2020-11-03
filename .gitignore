@@ -12,5 +12,5 @@ contacts/
 plan
 
 # Gradle
-.gradle
+.gradle/
 build/
