@@ -10,27 +10,27 @@ import java.util.Properties;
 import java.util.Scanner;
 
 public class ContactUtils {
-    static String contactPath = "/home/user/Desktop/Programming/Java/Cryptography/src/contacts/";
+    static String contactPath = "/home/user/Desktop/Programming/Java/Cryptography/contacts/";
 
-    public ContactUtils(BoolAndFilename exportCheck, BoolAndFilename importCheck, String newContactName) {
+    public ContactUtils(BoolAndFilename exportCheck, String newContactName) {
         if (exportCheck.bool) {
             exportPubKey(exportCheck.filename);
-        } else if (importCheck.bool) {
+        } else {
             if (newContactName.equals("NO NAME")) {
                 Scanner sc = new Scanner(System.in);
                 while (true) {
-                    System.out.println("Enter a nickname for the new contact:\n");
+                    System.out.println("Enter a nickname for the new contact:");
                     String name = sc.nextLine();
                     System.out.println("\nThe nickname for your new contact is : " + name);
                     System.out.println("Are you satisfied with this name? Y/n");
                     String option = sc.nextLine();
                     if (!option.toLowerCase().equals("n")) {
-                        importPubKey(importCheck.filename, newContactName);
+                        importPubKey(exportCheck.filename, name);
                         break;
                     }
                 }
             } else {
-                importPubKey(importCheck.filename, newContactName);
+                importPubKey(exportCheck.filename, newContactName);
             }
         }
     }
