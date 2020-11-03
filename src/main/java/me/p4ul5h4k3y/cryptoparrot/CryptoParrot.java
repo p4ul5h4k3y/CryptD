@@ -1,10 +1,11 @@
-package main.java;//Written by Paul Schakel
+package me.p4ul5h4k3y.cryptoparrot;
+
+//Written by Paul Schakel
 //This file is the main class of the CryptoParrot project. It handles the options and executes code accordingly
 
 
-import datatypes.*;
-import main.java.datatypes.BoolAndFilename;
-import main.java.datatypes.BoolAndPos;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndPos;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -12,7 +13,7 @@ import java.security.*;
 
 
 public class CryptoParrot {
-    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/configuration.conf";     //path to config file -- TODO: need to specify default
+    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/main/java/me/p4ul5h4k3y/cryptoparrot/configuration.conf";     //path to config file -- TODO: need to specify default
 
     public static void main(String[] args) {       //this method checks arguments and passes them to the proper place
         Security.addProvider(new BouncyCastleProvider());

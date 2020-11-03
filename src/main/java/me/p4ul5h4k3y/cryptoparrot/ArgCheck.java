@@ -1,9 +1,11 @@
-package main.java;//Written by Paul Schakel
+package me.p4ul5h4k3y.cryptoparrot;
+
+//Written by Paul Schakel
 //This class provides methods and classes useful for checking arguments in the CryptoParrot class
 
 
-import datatypes.*;
-import main.java.datatypes.BoolAndPos;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndPos;
+
 
 public class ArgCheck {
     public ArgCheck(String[] newArgList) {
@@ -11,6 +13,7 @@ public class ArgCheck {
     }
 
     public String[] argList;
+
 
     public boolean checkIfPresent(String toCheck) {     //checks if an argument (toCheck) is present in an array of valid arguments (argList)
         int i = 0;

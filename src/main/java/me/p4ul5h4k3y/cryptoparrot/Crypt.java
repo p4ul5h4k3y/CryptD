@@ -1,11 +1,11 @@
-package main.java;//Written by Paul Schakel
+package me.p4ul5h4k3y.cryptoparrot;
+
+//Written by Paul Schakel
 //This class is the parent of TextCrypt and FileCrypt and handles the decryption of data
 
 
-import datatypes.*;
-import main.java.datatypes.BoolAndFilename;
-import main.java.datatypes.TextAndKey;
-
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.TextAndKey;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
@@ -66,6 +66,7 @@ public class Crypt {
                 return pubKey;
             }
         } catch (Exception ex) {
+            ex.printStackTrace();
             System.out.println("E: Error loading keystore or private key");
             System.exit(1);
             return null;

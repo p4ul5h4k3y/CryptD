@@ -1,12 +1,11 @@
-package main.java;
+package me.p4ul5h4k3y.cryptoparrot;
 
 //Written by Paul Schakel
 //This class is an extension of TextCrypt which provides support for the encryption of files
 
 
-import datatypes.*;
-import main.java.datatypes.BoolAndFilename;
-import main.java.datatypes.TextAndKey;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
+import me.p4ul5h4k3y.cryptoparrot.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -20,7 +19,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class FileCrypt extends Crypt {
+public class FileCrypt extends me.p4ul5h4k3y.cryptoparrot.Crypt {
     public FileCrypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath, SecretKey currentSessionKey) {
         super(isEncrypt, hasFilePath);
         Security.addProvider(new BouncyCastleProvider());

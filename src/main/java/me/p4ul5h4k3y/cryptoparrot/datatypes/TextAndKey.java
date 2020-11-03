@@ -1,4 +1,4 @@
-package main.java.datatypes;
+package me.p4ul5h4k3y.cryptoparrot.datatypes;
 
 import javax.crypto.SecretKey;
 
