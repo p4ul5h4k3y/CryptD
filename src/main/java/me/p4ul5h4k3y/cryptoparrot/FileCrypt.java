@@ -1,8 +1,12 @@
+package main.java;
+
 //Written by Paul Schakel
 //This class is an extension of TextCrypt which provides support for the encryption of files
 
 
 import datatypes.*;
+import main.java.datatypes.BoolAndFilename;
+import main.java.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
