@@ -1,5 +1,8 @@
 package me.p4ul5h4k3y.cryptoparrot.datatypes;
 
+//Written by p4ul5h4k3y
+//This class provides a custom datatype which can store: a String, a SecretKey, and a metadata String.
+
 import javax.crypto.SecretKey;
 
 public class TextAndKey {
