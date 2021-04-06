@@ -1,71 +1,122 @@
 package me.p4ul5h4k3y.cryptoparrot;
 
-//Written by Paul Schakel
+//Written by p4ul5h4k3y
 //This file is the main class of the CryptoParrot project. It handles the options and executes code accordingly
 
 
-import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
-import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndPos;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import me.p4ul5h4k3y.cryptoparrot.contacts.Export;
+import me.p4ul5h4k3y.cryptoparrot.contacts.Import;
+import me.p4ul5h4k3y.cryptoparrot.encryption.Decrypt;
+import me.p4ul5h4k3y.cryptoparrot.encryption.FileCrypt;
+import me.p4ul5h4k3y.cryptoparrot.encryption.TextCrypt;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.security.*;
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 
 public class CryptoParrot {
-    static String path = "/home/user/Desktop/Programming/Java/Cryptography/src/main/java/me/p4ul5h4k3y/cryptoparrot/configuration.conf";     //path to config file -- TODO: need to specify default
+
+    public static String PATH = "/home/user/Desktop/Programming/Java/Cryptography/src/main/java/me/p4ul5h4k3y/cryptoparrot/configuration.conf";     //path to config file -- TODO: need to specify default
 
     public static void main(String[] args) {       //this method checks arguments and passes them to the proper place
         Security.addProvider(new BouncyCastleProvider());
         SecretKey sessionKey = genSessionKey();     //this is generated now and passed to TextCrypt and FileCrypt as arguments
 
-        HashMap<String, Boolean> flags = new HashMap<String, Boolean>()
-        {{
-            put("-d", true);
-            put("-e", false);
-            put("-g", false);
-            put("-p", true);
-            put("-h", false);
-            put("-f", true);
-            put("-x", true);
-            put("--name", true);
-            put("-i", true);
-        }};
+        //create option checker
+        OptionParser parser = new OptionParser();
+        parser.accepts("d").withRequiredArg();  //decrypt
+        parser.accepts("e");    //encrypt
+        parser.accepts("t").withOptionalArg();    //specifically encrypt text
+        parser.accepts("f").withRequiredArg();  //specifically encrypt a file/dir
+        parser.accepts("g");    //generate keypair
+        parser.accepts("p").withRequiredArg();  //set path for saving message
+        parser.accepts("i").withRequiredArg();  //import a public key
+        parser.accepts("name").withRequiredArg();   //set nickname for public key being imported
+        parser.accepts("x").withRequiredArg();  //export your public key
+        parser.accepts("h").forHelp();
 
-        ArgCheck checker = new ArgCheck(flags, args);
-        HashMap<String, BoolAndPos> checkedArgs = checker.returnCheckedArgs();
+        try {
+            OptionSet options = parser.parse(args);
 
-        if (checkedArgs.get("-h").bool) {
-            ArgCheck.printUsage();
-            System.exit(0);
-        }
-
-        if (checkedArgs.get("-e").bool | checkedArgs.get("-d").bool) {       //creates an instance of FileCrypt if true or TextCrypt if false
-            if (checkedArgs.get("-p").bool) {
-                if (checkedArgs.get("-f").bool) {
-                    new FileCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-f").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, args[checkedArgs.get("-p").pos]), sessionKey);
+            if (options.has("e")) {     //handle encrypt options
+                String encryptDestination;
+                if (options.has("p")) {
+                    encryptDestination = (String) options.valueOf("p");
                 } else {
-                    new TextCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-d").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, args[checkedArgs.get("-p").pos]), sessionKey);
+                    encryptDestination = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH:mm:ss").format(LocalDateTime.now()) + ".crypt";
                 }
-            } else if (checkedArgs.get("-f").bool) {
-                new FileCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-f").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, "NO PATH"), sessionKey);
-            } else {
-                new TextCrypt(new BoolAndFilename(checkedArgs.get("-e").bool, args[checkedArgs.get("-d").pos]), new BoolAndFilename(checkedArgs.get("-p").bool, "NO PATH"), sessionKey);
-            }
-        }
 
-        if (checkedArgs.get("-i").bool | checkedArgs.get("-x").bool) {
-            if (checkedArgs.get("-i").bool) {
-                if (checkedArgs.get("--name").bool) {
-                    new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-i").pos]), args[checkedArgs.get("--name").pos]);
-                } else {
-                    new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-i").pos]), "NO NAME");
+                if (options.has("t")) {     //encrypt text
+                    String encryptText;
+                    if (options.hasArgument("t")) {
+                        encryptText = (String) options.valueOf("t");
+                    } else {
+                        System.out.println("Enter the text you wish to Encrypt : ");
+                        encryptText = System.console().readLine();
+                    }
+
+                    new TextCrypt(encryptText, encryptDestination, sessionKey);
                 }
-            } else {
-                new ContactUtils(new BoolAndFilename(checkedArgs.get("-x").bool, args[checkedArgs.get("-x").pos]), "NO NAME");
+
+                if (options.has("f")) {     //encrypt file/dir
+                    String encryptPath = (String) options.valueOf("f");
+
+                    if (!options.has("p")) {
+                        encryptDestination = "NOT SPECIFIED";
+                    }
+
+                    new FileCrypt(encryptPath, encryptDestination, sessionKey);
+                }
+            } else if (options.has("d")) {  //handle decrypt options
+                String toDecrypt = (String) options.valueOf("d");
+                String decryptDestination;
+                if (options.has("p")) {     //checks if user specified output path
+                    decryptDestination = (String) options.valueOf("p");
+                } else {
+                    decryptDestination = "NOT SPECIFIED";
+                }
+
+                new Decrypt(toDecrypt, decryptDestination);
+            } else if (options.has("g")) {      //generates a new RSA keypair
+                new CreateKeypair();
+            } else if (options.has("i")) {      //handle options for importing public keys
+                String name;
+                if (options.has("name")) {
+                    name = (String) options.valueOf("name");
+                } else {
+                    name = "NOT SPECIFIED";
+                }
+
+                new Import((String) options.valueOf("i"), name);
+            } else if (options.has("x")) {  //handle exporting public key
+                new Export((String) options.valueOf("x"));
+            } else if (options.has("h")) {
+                printUsage();
             }
+        } catch (OptionException ex) {
+            System.out.println("\nE: Unrecognized Option");
+            printUsage();
         }
+    }
+
+    public static void printUsage() {
+        System.out.println("Usage: encrypt [OPTION] [ARGS] \n" +
+                "      -d [path-to-encrypted-data]       decrypt any data\n" +
+                "      -t                                encrypt text\n" +
+                "      -i [path-to-public-key]           imports somebody else's public key from a specified file and prompts the user to name the new contact\n" +
+                "           --name [nickname-for contact]      set the name for the new contact with a command\n" +
+                "      -x [filename]                     exports your public key and saves it to a specified filename so you can share it with others\n" +
+                "      -f [path-to-file]                 encrypt a specified file or directory\n" +
+                "      -g                                generate keypair for encryption\n" +
+                "      -p [path-to-file]                 set path for saving message to (default is current-dir/date_time) when encrypting\n" +
+                "                                            when decrypting it saves the decrypted message to the file\n" +
+                "      -h                                display this info and exit");
     }
 
     public static SecretKey genSessionKey() {
