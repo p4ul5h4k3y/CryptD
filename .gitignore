@@ -1,9 +1,16 @@
+# Idea
 .idea/
 Cryptography.iml
 out/
+
+# Testing material
 store.jks
 *.conf
-*.pub
+key.pub
 *.crypt
-src/contacts/
+/contacts/
 plan
+
+# Gradle
+.gradle/
+build/

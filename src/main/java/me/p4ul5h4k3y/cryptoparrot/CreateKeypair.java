@@ -1,4 +1,6 @@
-//Written by Paul Schakel
+package me.p4ul5h4k3y.cryptoparrot;
+
+//Written by p4ul5h4k3y
 //This class creates and stores the keypair for encryption and saves the path to the public and private keys in TODO: set default
 
 
@@ -18,29 +20,27 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Properties;
-import java.util.Scanner;
 
 
 public class CreateKeypair {
-    static Scanner sc = new Scanner(System.in);     //used to read the password from stdin
 
-    public static void main(String[] args) throws NoSuchAlgorithmException, NoSuchProviderException {
-        Security.addProvider(new BouncyCastleProvider());       //needed for key generation
+    public CreateKeypair() {
+        try {
+            Security.addProvider(new BouncyCastleProvider());       //needed for key generation
 
-        String path = parseArgs(args, "-g");        //gets the path to the configuration.conf file TODO: update with defaults
-        if (path.equals("NO ARGS")) {
-            System.out.println("E: Path argument necessary to create keypair");
+            String path = CryptoParrot.PATH;
+            String pass1 = getPassword();
+            genAndStoreKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);   //TODO: remove hard-coded path
+        } catch (Exception ex) {
+            System.out.println("E: Error occurred while generating new RSA key pair");
             System.exit(1);
         }
-        String pass1 = getPassword();
-        genAndStoreKeys(pass1, "/home/user/Desktop/Programming/Java/Cryptography", path);   //TODO: remove hard-coded path
     }
 
 
-    public static void genAndStoreKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException, NoSuchProviderException {
+    public void genAndStoreKeys(String password, String keyStorePath, String confPath) throws NoSuchAlgorithmException, NoSuchProviderException {
 
         /* This code will generate an RSA-4096 key pair and store them in a java keystore (private)
         * and a key.pub file (public). Then it will save the paths to key.pub and store.jks in configuration.conf
@@ -65,7 +65,7 @@ public class CreateKeypair {
             ks.store(fos, pwdChars);
 
         } catch (Exception ex) {
-            System.out.println("Something  went wrong while storing the private key.");
+            System.out.println("E: Something  went wrong while storing the private key.");
             ex.printStackTrace();
         }
 
@@ -95,7 +95,7 @@ public class CreateKeypair {
         }
     }
 
-    public static X509Certificate[] genCertChain(PublicKey pubKey, PrivateKey privKey) {        //creates the certificates for the keypair. TODO: set up with a cert authority
+    public X509Certificate[] genCertChain(PublicKey pubKey, PrivateKey privKey) {        //creates the certificates for the keypair. TODO: set up with a cert authority
         try {
             SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
             X500Name dnName = new X500Name("CN=ROOT");
@@ -132,19 +132,7 @@ public class CreateKeypair {
         }
     }
 
-    public static String parseArgs(String[] args, String flag) {        //basically just gets the arg after the specified flag
-        int i = 0;
-        for (String arg : args) {
-            if (arg.equals(flag)) {
-                return args[i + 1];
-            } else {
-                i++;
-            }
-        }
-        return "NO ARGS";
-    }
-
-    public static String getPassword() {        //prompts the user to enter a password to use for the locking of the keyStore. TODO: probably need to require a better password
+    public String getPassword() {        //prompts the user to enter a password to use for the locking of the keyStore.
         String[] nums = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
         String[] specialChars = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "~", "`", "{", "}", "[", "]", "|", ":", ";", "'", "\"", "<", ">", ",", ".", "?", "/", "-", "_", "+", "="};
         String[] CAPITALS = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"};
@@ -173,7 +161,7 @@ public class CreateKeypair {
         }
     }
 
-    public static boolean checkIfCharInString(String toCheck, String[] list) {
+    public boolean checkIfCharInString(String toCheck, String[] list) {
 
         for (String s : list) {
             if (toCheck.contains(s)) {

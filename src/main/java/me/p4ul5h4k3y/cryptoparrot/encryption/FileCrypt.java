@@ -1,8 +1,11 @@
-//Written by Paul Schakel
-//This class is an extension of TextCrypt which provides support for the encryption of files
+package me.p4ul5h4k3y.cryptoparrot.encryption;
+
+//Written by p4ul5h4k3y
+//This class extends Encrypt and provides support for the encryption of files. Files and directories are compressed into a zip and then encrypted.
+//In addition, this class contains the methods to unzip the decrypted data.
 
 
-import datatypes.*;
+import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -16,38 +19,38 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class FileCrypt extends Crypt {
-    public FileCrypt(BoolAndFilename isEncrypt, BoolAndFilename hasFilePath, SecretKey currentSessionKey) {
-        super(isEncrypt, hasFilePath);
+public class FileCrypt extends Encrypt {
+
+    public FileCrypt(String pathToEncrypt, String filenameDestination, SecretKey currentSessionKey) {
         Security.addProvider(new BouncyCastleProvider());
-        File toEncrypt = new File(isEncrypt.filename);
-        if (isEncrypt.bool) {
-            PublicKey key = (PublicKey) getKey(false);
-            try {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ZipOutputStream zipout = new ZipOutputStream(bos);
-                File inputDir = new File(isEncrypt.filename);
-                Path inputPath = Paths.get(isEncrypt.filename);
-                zipFile(inputDir, inputPath.getFileName().toString(), zipout);
-                byte[] bytesToEncrypt = bos.toByteArray();
-                zipout.close();
-                bos.close();
-                byte[] encrypted = encrypt(bytesToEncrypt, currentSessionKey);
-                if (hasFilePath.bool) {
-                    String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, hasFilePath.filename);
-                    System.out.println("\nSaved encrypted data to file : " + filename);
-                } else {
-                    String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, toEncrypt.getName() + ".crypt");
-                    System.out.println("\nSaved encrypted data to file : " + filename);
-                }
-            } catch (IOException e) {
-                System.out.println("E: Error occurred while compressing the files for encryption");
-                System.exit(1);
+
+        PublicKey key = (PublicKey) getKey(false);
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ZipOutputStream zipout = new ZipOutputStream(bos);
+            File inputDir = new File(pathToEncrypt);
+            Path inputPath = Paths.get(pathToEncrypt);
+            zipFile(inputDir, inputPath.getFileName().toString(), zipout);      //compress files
+            byte[] bytesToEncrypt = bos.toByteArray();      //convert ByteArrayOutputStream which contains compressed files into a ByteArray
+            zipout.close();
+            bos.close();
+            byte[] encrypted = encrypt(bytesToEncrypt, currentSessionKey);      //encrypt ByteArray
+
+            String toSaveData = filenameDestination;
+            if (filenameDestination.equals("NOT SPECIFIED")) {  //set filename if not user specified
+                File path = new File(pathToEncrypt);
+                toSaveData = path.getName() + ".crypt";
             }
+
+            storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, toSaveData);
+            System.out.println("\nSaved encrypted data to file : " + filenameDestination);
+        } catch (IOException e) {
+            System.out.println("E: Error occurred while compressing the files for encryption");
+            System.exit(1);
         }
     }
 
-    public static byte[] encrypt(byte[] plainBytes, SecretKey cryptKey) {
+    public static byte[] encrypt(byte[] plainBytes, SecretKey cryptKey) {       //encrypts the byte[] passed to it
         try {
             Cipher aesCipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
             aesCipher.init(Cipher.ENCRYPT_MODE, cryptKey);
@@ -59,9 +62,9 @@ public class FileCrypt extends Crypt {
         }
     }
 
-    public static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) {
+    public static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) {       //recursively zips the specified files/directories
         try {
-            if (fileToZip.isDirectory()) {
+            if (fileToZip.isDirectory()) {          //checks if it needs to recursively zip dir
                 if (fileName.endsWith("/")) {
                     zipOut.putNextEntry(new ZipEntry(fileName));
                 } else {
@@ -69,8 +72,8 @@ public class FileCrypt extends Crypt {
                 }
                 zipOut.closeEntry();
                 File[] children = fileToZip.listFiles();
-                for (File childFile : children) {
-                    zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);
+                for (File childFile : children) {           //zips each of the files within the dir
+                    zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);       //creates new instance of this function for each item in dir
                 }
                 return;
             }
@@ -79,7 +82,7 @@ public class FileCrypt extends Crypt {
             zipOut.putNextEntry(zipEntry);
             byte[] bytes = new byte[1024];
             int length;
-            while ((length = fis.read(bytes)) >= 0) {
+            while ((length = fis.read(bytes)) >= 0) {           //writes the new zipEntry to the ZipOutputStream
                 zipOut.write(bytes, 0, length);
             }
             zipOut.closeEntry();        // <--- if you haven't got this little blighter right here then the data in files won't save (at least 10 hrs lost to this guy)
@@ -92,15 +95,15 @@ public class FileCrypt extends Crypt {
         }
     }
 
-    public static void unzipAndWriteDir(byte[] zipped, String destDir) {
+    public static void unzipAndWriteDir(byte[] zipped, String destDir) {            //unzips already-decrypted data and writes it to the specified destination
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(zipped);
-            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(bis));
+            ZipInputStream zis = new ZipInputStream(new BufferedInputStream(bis));      //convert byte[] to collection of zipEntries
             ZipEntry entry;
             while((entry = zis.getNextEntry()) != null) {
                 Path newFile = Paths.get(destDir, entry.getName());
                 if (!entry.isDirectory()) {
-                    unzipFiles(zis, newFile);
+                    unzipFiles(zis, newFile);           //makes sure entry isn't a directory and sends to unzipFiles() to unzip and write to the filesystem
                 } else {
                     Files.createDirectories(newFile);
                 }
@@ -125,7 +128,7 @@ public class FileCrypt extends Crypt {
             FileOutputStream fos = new FileOutputStream(unzipPath.toAbsolutePath().toString());
             byte[] bytesIn = new byte[1024];
             int read;
-            while ((read = zinput.read(bytesIn, 0, bytesIn.length)) != -1) {
+            while ((read = zinput.read(bytesIn, 0, bytesIn.length)) != -1) {        //write decompressed file to filesystem
                 fos.write(bytesIn, 0, read);
             }
             fos.close();
