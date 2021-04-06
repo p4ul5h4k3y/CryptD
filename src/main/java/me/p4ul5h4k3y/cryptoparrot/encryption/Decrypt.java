@@ -3,14 +3,11 @@ package me.p4ul5h4k3y.cryptoparrot.encryption;
 //Written by p4ul5h4k3y
 //This class extends Encrypt and provides functionality for decrypting data. It automatically detects what type of data is being decrypted and outputs the decrypted data to the user
 
-import me.p4ul5h4k3y.cryptoparrot.util.datatypes.BoolAndFilename;
 import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
-
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import java.io.*;
 import java.security.PrivateKey;
-import java.util.HashMap;
 import java.util.Properties;
 
 public class Decrypt extends Encrypt {
@@ -23,13 +20,12 @@ public class Decrypt extends Encrypt {
         SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
         byte[] decryptedData = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);    //decrypts the data with the AES key
 
-        BoolAndFilename destInfo;
+        boolean pathSpecified;
         if (filenameDestination.equals("NOT SPECIFIED")) {
-            destInfo = new BoolAndFilename(false, filenameDestination);
+            pathSpecified = false;
         } else {
-            destInfo = new BoolAndFilename(true, filenameDestination);
-        }
-        saveDecryptedData(destInfo, cryptTextAndKey.metadata, decryptedData);
+            pathSpecified = true;        }
+        saveDecryptedData(pathSpecified, filenameDestination, cryptTextAndKey.metadata, decryptedData);
     }
 
     public static TextAndKey getTextAndKey(String path, PrivateKey cryptKey) {      //gets the encrypted data and the SecretKey used to encrypt the data
@@ -74,24 +70,24 @@ public class Decrypt extends Encrypt {
         }
     }
 
-    public static void saveDecryptedData(BoolAndFilename hasPath, String metadata, byte[] decryptedData) {      //finds out what type of data the decrypted data is, and saves it accordingly
-        if (hasPath.bool | metadata.equals("file/dir")) {       // checks if the user has specified where to save the data or whether the data is a file or directory
+    public static void saveDecryptedData(boolean hasPath, String path, String metadata, byte[] decryptedData) {      //finds out what type of data the decrypted data is, and saves it accordingly
+        if (hasPath | metadata.equals("file/dir")) {       // checks if the user has specified where to save the data or whether the data is a file or directory
             if (metadata.equals("text")) {      //writes text to the user-specified location
                 try {
                     String plainText = new String(decryptedData);
-                    FileWriter wr = new FileWriter(hasPath.filename);
+                    FileWriter wr = new FileWriter(path);
                     wr.write(plainText);
                     wr.close();
-                    System.out.println("Decrypted Text written to file: " + hasPath.filename);
+                    System.out.println("Decrypted Text written to file: " + path);
                 } catch (IOException e) {
                     System.out.println("E: Error while writing decrypted text to file");
                     System.exit(1);
                 }
             } else {        //unzips the files and writes them to the correct place
                 try {
-                    String filename = hasPath.filename;
-                    if (!hasPath.bool) {        //generates a filename for the data if user hasn't specified one
-                        String[] splitFilename = new File(hasPath.filename).getName().split("\\.(?=[^\\.]+$)");
+                    String filename = path;
+                    if (!hasPath) {        //generates a filename for the data if user hasn't specified one
+                        String[] splitFilename = new File(path).getName().split("\\.(?=[^\\.]+$)");
                         filename = splitFilename[0];
                     }
                     FileCrypt.unzipAndWriteDir(decryptedData, filename);    //sends the data over to FileCrypt to unzup and write
