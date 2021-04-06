@@ -1,107 +1,35 @@
-package me.p4ul5h4k3y.cryptoparrot;
+package me.p4ul5h4k3y.cryptoparrot.encryption;
 
 //Written by p4ul5h4k3y
-//This class is the parent of TextCrypt and FileCrypt. It contains all of the methods used for the decryption of data, as well as some shared methods for encryption.
+//This class extends Encrypt and provides functionality for decrypting data. It automatically detects what type of data is being decrypted and outputs the decrypted data to the user
 
-import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
-import me.p4ul5h4k3y.cryptoparrot.datatypes.TextAndKey;
-import me.p4ul5h4k3y.cryptoparrot.util.Default;
+import me.p4ul5h4k3y.cryptoparrot.util.datatypes.BoolAndFilename;
+import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.xml.bind.DatatypeConverter;
 import java.io.*;
-import java.security.Key;
-import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Properties;
 
-public class Decrypt extends Default {
+public class Decrypt extends Encrypt {
 
-    static BoolAndFilename isEncrypt;
-    static BoolAndFilename hasFilePath;
 
-    public Decrypt(HashMap<String, Object> args) {
-        isEncrypt = (BoolAndFilename) args.get("-d");
-        hasFilePath = (BoolAndFilename) args.get("-p");
-    }
+    public Decrypt(String pathToDecrypt, String filenameDestination) {
+        PrivateKey key = (PrivateKey) getKey(true);             //gets the private RSA key for data decryption
+        TextAndKey cryptTextAndKey = getTextAndKey(pathToDecrypt, key);    //finds AES key used to encrypt the data
+        assert cryptTextAndKey != null;
+        SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
+        byte[] decryptedData = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);    //decrypts the data with the AES key
 
-    public static void main() {
-        if (!isEncrypt.bool) {      //makes sure it is supposed to decrypt (Crypt only handles decryption)
-            try {
-                PrivateKey key = (PrivateKey) getKey(true);             //gets the private RSA key for data decryption
-                TextAndKey cryptTextAndKey = getTextAndKey(isEncrypt.filename, key);    //finds AES key used to encrypt the data
-                assert cryptTextAndKey != null;
-                SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
-                byte[] decryptedData = decrypt(hexToBytes(cryptTextAndKey.text), oldSessionKey);    //decrypts the data with the AES key
-                if (!hasFilePath.bool) {
-                    hasFilePath.filename = isEncrypt.filename;
-                }
-                saveDecryptedData(hasFilePath, cryptTextAndKey.metadata, decryptedData);
-            } catch (ArrayIndexOutOfBoundsException ex) {
-                System.out.println("E: Path to .crypt file required");
-                System.exit(1);
-            }
+        BoolAndFilename destInfo;
+        if (filenameDestination.equals("NOT SPECIFIED")) {
+            destInfo = new BoolAndFilename(false, filenameDestination);
+        } else {
+            destInfo = new BoolAndFilename(true, filenameDestination);
         }
-    }
-
-    public static String bytesToHex(byte[] hash) {         //converts a byte array into a hex string
-        return DatatypeConverter.printHexBinary(hash);
-    }
-
-    public static byte[] hexToBytes(String hex) {         //converts a hex string back to a byte array
-        byte[] bytes = new byte[hex.length() / 2];
-        for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) Integer.parseInt(hex.substring(2 * i, 2 * i + 2), 16);
-        }
-        return bytes;
-    }
-
-    public static Key getKey(boolean isPrivate) {         //gets either the public or the private RSA key from secure storage
-        System.out.println("Enter the password to your Keystore : ");
-        char[] password = System.console().readPassword();
-        try {
-            Properties conf = new Properties();
-            conf.load(new FileInputStream(CryptoParrot.path));      //grabs the configuration file so that it can find the path to the key storage
-            String ksPath = conf.getProperty("KEYSTORE");
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(new FileInputStream(ksPath), password);
-            if (isPrivate) {
-                return ks.getKey("private-key", password);      //get the private key from secure KeyStore
-            } else {
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(conf.getProperty("PUBKEY")));
-                PublicKey pubKey = (PublicKey) ois.readObject();        //read PublicKey from storage. Public key is just stored as a java object in a file
-                ois.close();
-                return pubKey;
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            System.out.println("E: Error loading keystore or private key");
-            System.exit(1);
-            return null;
-        }
-    }
-
-
-    public static String storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey, String filename) {        //stores encrypted data and current session key in a specified file
-        String cryptSessionKey = bytesToHex(wrapSessionKey(textAndKey.sessionKey, pubKey));     //prepare session key for writing to file
-        Properties conf = new Properties();
-
-        try {
-            FileWriter wr = new FileWriter(filename, true);     // from here down is just writing stuff to the file
-            BufferedWriter bwr = new BufferedWriter(wr);
-            conf.setProperty("TEXT", textAndKey.text);
-            conf.setProperty("SESSIONKEY", cryptSessionKey);
-            conf.setProperty("META", textAndKey.metadata);
-            conf.store(bwr, "");
-            return filename;
-        } catch (IOException ex) {
-            System.out.println("E: Error occurred while writing encrypted text to file");
-            System.exit(1);
-            return null;
-        }
+        saveDecryptedData(destInfo, cryptTextAndKey.metadata, decryptedData);
     }
 
     public static TextAndKey getTextAndKey(String path, PrivateKey cryptKey) {      //gets the encrypted data and the SecretKey used to encrypt the data
@@ -117,18 +45,6 @@ public class Decrypt extends Default {
             return new TextAndKey(cryptText, sessionKey, meta);
         } catch (IOException ex) {
             System.out.println("E: Error while getting sessionKey and encrypted text (the data you wanted to decrypt wasn't there)");
-            System.exit(1);
-            return null;
-        }
-    }
-
-    public static byte[] wrapSessionKey(SecretKey keyToWrap, PublicKey cryptKey) {      //encrypts an AES-256 key with RSA-4096 so that it can be transported
-        try {
-            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-512ANDMGF1PADDING", "BC");
-            rsaCipher.init(Cipher.WRAP_MODE, cryptKey);
-            return rsaCipher.wrap(keyToWrap);       //encrypts (or "wraps") the key
-        } catch (Exception ex) {
-            System.out.println("E: Error occurred during sessionkey wrapping");
             System.exit(1);
             return null;
         }

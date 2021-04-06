@@ -1,12 +1,11 @@
-package me.p4ul5h4k3y.cryptoparrot;
+package me.p4ul5h4k3y.cryptoparrot.encryption;
 
 //Written by p4ul5h4k3y
-//This class is an extension of Crypt which provides support for the encryption of files. Files and directories are compressed into a zip and then encrypted.
+//This class extends Encrypt and provides support for the encryption of files. Files and directories are compressed into a zip and then encrypted.
 //In addition, this class contains the methods to unzip the decrypted data.
 
 
-import me.p4ul5h4k3y.cryptoparrot.datatypes.BoolAndFilename;
-import me.p4ul5h4k3y.cryptoparrot.datatypes.TextAndKey;
+import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -16,53 +15,39 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
-import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-public class FileCrypt extends Decrypt {
+public class FileCrypt extends Encrypt {
 
-    static BoolAndFilename isEncrypt;
-    static BoolAndFilename hasFilePath;
-    static SecretKey currentSessionKey;
-
-    public FileCrypt(HashMap<String, Object> args) {
-        super(args);                   //send requests for decryption to Crypt (FileCrypt only encrypts files)
+    public FileCrypt(String pathToEncrypt, String filenameDestination, SecretKey currentSessionKey) {
         Security.addProvider(new BouncyCastleProvider());
 
-        isEncrypt = (BoolAndFilename) args.get("-f");
-        hasFilePath = (BoolAndFilename) args.get("-p");
-        currentSessionKey = (SecretKey) args.get("sessionKey");
-    }
+        PublicKey key = (PublicKey) getKey(false);
+        try {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ZipOutputStream zipout = new ZipOutputStream(bos);
+            File inputDir = new File(pathToEncrypt);
+            Path inputPath = Paths.get(pathToEncrypt);
+            zipFile(inputDir, inputPath.getFileName().toString(), zipout);      //compress files
+            byte[] bytesToEncrypt = bos.toByteArray();      //convert ByteArrayOutputStream which contains compressed files into a ByteArray
+            zipout.close();
+            bos.close();
+            byte[] encrypted = encrypt(bytesToEncrypt, currentSessionKey);      //encrypt ByteArray
 
-    public static void main() {
-        File toEncrypt = new File(isEncrypt.filename);
-        if (isEncrypt.bool) {           //make sure it's supposed to encrypt the data
-            PublicKey key = (PublicKey) getKey(false);
-            try {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                ZipOutputStream zipout = new ZipOutputStream(bos);
-                File inputDir = new File(isEncrypt.filename);
-                Path inputPath = Paths.get(isEncrypt.filename);
-                zipFile(inputDir, inputPath.getFileName().toString(), zipout);      //compress files
-                byte[] bytesToEncrypt = bos.toByteArray();      //convert ByteArrayOutputStream which contains compressed files into a ByteArray
-                zipout.close();
-                bos.close();
-                byte[] encrypted = encrypt(bytesToEncrypt, currentSessionKey);      //encrypt ByteArray
-                if (hasFilePath.bool) {         //decide where to save the encrypted data
-                    String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, hasFilePath.filename);     //if user specified where
-                    System.out.println("\nSaved encrypted data to file : " + filename);
-                } else {
-                    String filename = storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, toEncrypt.getName() + ".crypt");   //generate location: current_dir/name-of-original-file.crypt
-                    System.out.println("\nSaved encrypted data to file : " + filename);
-                }
-            } catch (IOException e) {
-                System.out.println("E: Error occurred while compressing the files for encryption");
-                System.exit(1);
+            String toSaveData = filenameDestination;
+            if (filenameDestination.equals("NOT SPECIFIED")) {  //set filename if not user specified
+                File path = new File(pathToEncrypt);
+                toSaveData = path.getName() + ".crypt";
             }
-        }
 
+            storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, toSaveData);
+            System.out.println("\nSaved encrypted data to file : " + filenameDestination);
+        } catch (IOException e) {
+            System.out.println("E: Error occurred while compressing the files for encryption");
+            System.exit(1);
+        }
     }
 
     public static byte[] encrypt(byte[] plainBytes, SecretKey cryptKey) {       //encrypts the byte[] passed to it
