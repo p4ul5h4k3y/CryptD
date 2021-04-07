@@ -14,13 +14,12 @@ jar {
         attributes "Main-Class": "me.p4ul5h4k3y.cryptoparrot.CryptoParrot"
     }
     from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    exclude "META-INF/*.RSA", "META-INF/*.SF","META-INF/*.DSA"
 }
 
 dependencies {
-    compile group: "org.bouncycastle", name: "bcprov-jdk15on", version: "1.67"
-    compile group: "org.bouncycastle", name: "bcpkix-jdk15on", version: "1.67"
-    compile group: "net.sf.jopt-simple", name: "jopt-simple", version: "6.0-alpha-3"
+    implementation group: "org.bouncycastle", name: "bcprov-jdk15on", version: "1.67"
+    implementation group: "org.bouncycastle", name: "bcpkix-jdk15on", version: "1.67"
+    implementation group: "net.sf.jopt-simple", name: "jopt-simple", version: "6.0-alpha-3"
 }
