@@ -73,6 +73,10 @@ public class CryptoParrot {
 
                     new FileCrypt(encryptPath, encryptDestination, sessionKey);
                 }
+
+                if (!options.has("f") || !options.has("t")) {   //display warning message
+                    System.out.println("No options specified for encryption.\nUse -t to encrypt text and -f to encrypt a file or directory.\nSee help (-h) for more details");
+                }
             } else if (options.has("d")) {  //handle decrypt options
                 String toDecrypt = (String) options.valueOf("d");
                 String decryptDestination;
@@ -109,14 +113,18 @@ public class CryptoParrot {
         System.out.println("Usage: encrypt [OPTION] [ARGS] \n" +
                 "      -d [path-to-encrypted-data]       decrypt any data\n" +
                 "      -t                                encrypt text\n" +
-                "      -i [path-to-public-key]           imports somebody else's public key from a specified file and prompts the user to name the new contact\n" +
-                "           --name [nickname-for contact]      set the name for the new contact with a command\n" +
-                "      -x [filename]                     exports your public key and saves it to a specified filename so you can share it with others\n" +
+                "      -i [path-to-public-key]           imports somebody else's public\n" +
+                "                                        key from a specified file and prompts\n" +
+                "                                        the user to name the new contact\n" +
+                "           --name [nickname-for contact]      set the name for the new contact\n" +
+                "      -x [filename]                     exports your public key and saves it to\n" +
+                "                                        a specified filename so you can share it with others\n" +
                 "      -f [path-to-file]                 encrypt a specified file or directory\n" +
                 "      -g                                generate keypair for encryption\n" +
-                "      -p [path-to-file]                 set path for saving message to (default is current-dir/date_time) when encrypting\n" +
-                "                                            when decrypting it saves the decrypted message to the file\n" +
-                "      -h                                display this info and exit");
+                "      -p [path-to-file]                 set path for saving message to\n" +
+                "                                        (default is current-dir/date_time) when encrypting\n" +
+                "                                        when decrypting it saves the decrypted message to the file\n" +
+                "      -h                                display this info and exit\n");
     }
 
     public static SecretKey genSessionKey() {
