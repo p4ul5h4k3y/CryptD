@@ -7,44 +7,53 @@ package me.p4ul5h4k3y.cryptoparrot;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import me.p4ul5h4k3y.cryptoparrot.contacts.Export;
-import me.p4ul5h4k3y.cryptoparrot.contacts.Import;
+import me.p4ul5h4k3y.cryptoparrot.keys.Export;
+import me.p4ul5h4k3y.cryptoparrot.keys.Import;
 import me.p4ul5h4k3y.cryptoparrot.encryption.Decrypt;
 import me.p4ul5h4k3y.cryptoparrot.encryption.FileCrypt;
 import me.p4ul5h4k3y.cryptoparrot.encryption.TextCrypt;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import java.security.*;
+import me.p4ul5h4k3y.cryptoparrot.keys.KeyFinder;
+import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 
 
 public class CryptoParrot {
 
-    public static String PATH = "/home/user/Desktop/Programming/Java/Cryptography/src/main/java/me/p4ul5h4k3y/cryptoparrot/configuration.conf";     //path to config file -- TODO: need to specify default
+    public static String PATH = "/home/user/Desktop/Programming/Java/CryptoParrot/configuration.conf";     //path to config file -- TODO: need to specify default
 
     public static void main(String[] args) {       //this method checks arguments and passes them to the proper place
-        Security.addProvider(new BouncyCastleProvider());
-        SecretKey sessionKey = genSessionKey();     //this is generated now and passed to TextCrypt and FileCrypt as arguments
 
         //create option checker
         OptionParser parser = new OptionParser();
-        parser.accepts("d").withRequiredArg();  //decrypt
-        parser.accepts("e");    //encrypt
-        parser.accepts("t").withOptionalArg();    //specifically encrypt text
-        parser.accepts("f").withRequiredArg();  //specifically encrypt a file/dir
-        parser.accepts("g");    //generate keypair
-        parser.accepts("p").withRequiredArg();  //set path for saving message
-        parser.accepts("i").withRequiredArg();  //import a public key
+        parser.acceptsAll(Arrays.asList("d", "decrypt")).withRequiredArg();  //decrypt
+        parser.acceptsAll(Arrays.asList("e", "encrypt"));    //encrypt
+        parser.acceptsAll(Arrays.asList("r", "recipient")).withRequiredArg();
+        parser.acceptsAll(Arrays.asList("t", "text")).withOptionalArg();    //specifically encrypt text
+        parser.acceptsAll(Arrays.asList("f", "file", "files", "dir", "directory")).withRequiredArg();  //specifically encrypt a file/dir
+        parser.acceptsAll(Arrays.asList("g", "gen-keypair"));    //generate keypair
+        parser.acceptsAll(Arrays.asList("p", "path")).withRequiredArg();  //set path for saving message
+        parser.acceptsAll(Arrays.asList("i", "import")).withRequiredArg();  //import a public key
         parser.accepts("name").withRequiredArg();   //set nickname for public key being imported
-        parser.accepts("x").withRequiredArg();  //export your public key
-        parser.accepts("h").forHelp();
+        parser.acceptsAll(Arrays.asList("x", "export")).withRequiredArg();  //export your public key
+        parser.acceptsAll(Arrays.asList("h", "help")).forHelp();
+
+        KeyFinder x = new KeyFinder(false, "self");
 
         try {
             OptionSet options = parser.parse(args);
 
             if (options.has("e")) {     //handle encrypt options
+
+                PublicKey encryptionKey;
+                KeyFinder kf = new KeyFinder();
+                if (options.has("r")) {     //figure out which public key to use
+                    encryptionKey = kf.getPublicKey((String) options.valueOf("r"));
+                } else {
+                    encryptionKey = kf.getPublicKey("self");
+                }
+
                 String encryptDestination;
                 if (options.has("p")) {
                     encryptDestination = (String) options.valueOf("p");
@@ -61,7 +70,7 @@ public class CryptoParrot {
                         encryptText = System.console().readLine();
                     }
 
-                    new TextCrypt(encryptText, encryptDestination, sessionKey);
+                    new TextCrypt(encryptText, encryptDestination, encryptionKey);
                 }
 
                 if (options.has("f")) {     //encrypt file/dir
@@ -71,10 +80,10 @@ public class CryptoParrot {
                         encryptDestination = "NOT SPECIFIED";
                     }
 
-                    new FileCrypt(encryptPath, encryptDestination, sessionKey);
+                    new FileCrypt(encryptPath, encryptDestination, encryptionKey);
                 }
 
-                if (!options.has("f") || !options.has("t")) {   //display warning message
+                if (!options.has("f") && !options.has("t")) {   //display warning message
                     System.out.println("No options specified for encryption.\nUse -t to encrypt text and -f to encrypt a file or directory.\nSee help (-h) for more details");
                 }
             } else if (options.has("d")) {  //handle decrypt options
@@ -104,40 +113,28 @@ public class CryptoParrot {
                 printUsage();
             }
         } catch (OptionException ex) {
-            System.out.println("\nE: Unrecognized Option");
+            System.out.println("\nE: Invalid option or option additional option was required");
             printUsage();
         }
     }
 
     public static void printUsage() {
         System.out.println("Usage: encrypt [OPTION] [ARGS] \n" +
-                "      -d [path-to-encrypted-data]       decrypt any data\n" +
-                "      -t                                encrypt text\n" +
-                "      -i [path-to-public-key]           imports somebody else's public\n" +
-                "                                        key from a specified file and prompts\n" +
-                "                                        the user to name the new contact\n" +
-                "           --name [nickname-for contact]      set the name for the new contact\n" +
-                "      -x [filename]                     exports your public key and saves it to\n" +
-                "                                        a specified filename so you can share it with others\n" +
-                "      -f [path-to-file]                 encrypt a specified file or directory\n" +
-                "      -g                                generate keypair for encryption\n" +
-                "      -p [path-to-file]                 set path for saving message to\n" +
+                "      -d, --decrypt=FILEPATH            decrypt any data\n" +
+                "      -e, --encrypt                     set mode to encrypt (requires additional options)\n" +
+                "      -t, --text=(TEXT)                 encrypt text\n" +
+                "      -f, --file=PATH                   encrypt a specified file or directory\n" +
+                "      -g, --gen-keypair                 generate keypair for encryption\n" +
+                "      -p, --path=PATH                   set path for saving message to\n" +
                 "                                        (default is current-dir/date_time) when encrypting\n" +
                 "                                        when decrypting it saves the decrypted message to the file\n" +
-                "      -h                                display this info and exit\n");
-    }
-
-    public static SecretKey genSessionKey() {
-        /* This method generates the javax.crypto.SecretKey which is
-        * encrypted by the RSA key before the encrypted data is saved */
-        try {
-            KeyGenerator gen = KeyGenerator.getInstance("AES", "BC");
-            gen.init(256);
-            return gen.generateKey();
-        } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
-            System.out.println("E: Error while generating session key");
-            ex.printStackTrace();
-            return null;
-        }
+                "      -i, --import=FILEPATH             imports somebody else's public\n" +
+                "                                        key from a specified file and prompts\n" +
+                "                                        the user to name the new contact\n" +
+                "          --name=NICKNAME               set the name for the new contact\n" +
+                "      -x, --export=PATH                     exports your public key and saves it to\n" +
+                "                                        a specified filename so you can share it with others\n" +
+                "      -h, --help                        display this info and exit\n\n" +
+                "If an argument is in parentheses it is optional.");
     }
 }
