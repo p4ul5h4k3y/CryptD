@@ -1,41 +1,17 @@
 package me.p4ul5h4k3y.cryptoparrot.encryption;
 
-import me.p4ul5h4k3y.cryptoparrot.CryptoParrot;
 import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
-
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.*;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.PublicKey;
+import java.security.*;
 import java.util.Properties;
 
 public class Encrypt {
 
-    public static Key getKey(boolean isPrivate) {         //gets either the public or the private RSA key from secure storage
-        System.out.println("Enter the password to your Keystore : ");
-        char[] password = System.console().readPassword();
-        try {
-            Properties conf = new Properties();
-            conf.load(new FileInputStream(CryptoParrot.PATH));      //grabs the configuration file so that it can find the path to the key storage
-            String ksPath = conf.getProperty("KEYSTORE");
-            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(new FileInputStream(ksPath), password);
-            if (isPrivate) {
-                return ks.getKey("private-key", password);      //get the private key from secure KeyStore
-            } else {
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(conf.getProperty("PUBKEY")));
-                PublicKey pubKey = (PublicKey) ois.readObject();        //read PublicKey from storage. Public key is just stored as a java object in a file
-                ois.close();
-                return pubKey;
-            }
-        } catch (Exception ex) {
-            System.out.println("E: Error loading keystore or private key, your password was probably incorrect");
-            System.exit(1);
-            return null;
-        }
-    }
+    final SecretKey currentSessionKey = genSessionKey();    //AES-256 key
 
     public static String bytesToHex(byte[] bytes) {         //converts a byte array into a hex string
         StringBuilder result = new StringBuilder();
@@ -53,7 +29,7 @@ public class Encrypt {
         return bytes;
     }
 
-    public static void storeTextAndKey(TextAndKey textAndKey, PublicKey pubKey, String filename) {        //stores encrypted data and current session key in a specified file
+    public static void storeDataAndKey(TextAndKey textAndKey, PublicKey pubKey, String filename) {        //stores encrypted data and current session key in a specified file
         String cryptSessionKey = bytesToHex(wrapSessionKey(textAndKey.sessionKey, pubKey));     //prepare session key for writing to file
         Properties conf = new Properties();
 
@@ -82,4 +58,20 @@ public class Encrypt {
         }
     }
 
+    public static SecretKey genSessionKey() {
+        /* This method generates the javax.crypto.SecretKey which is
+         * encrypted by the RSA key before the encrypted data is saved */
+
+        Security.addProvider(new BouncyCastleProvider());       //needed for key generation
+
+        try {
+            KeyGenerator gen = KeyGenerator.getInstance("AES", "BC");
+            gen.init(256);
+            return gen.generateKey();
+        } catch (NoSuchAlgorithmException | NoSuchProviderException ex) {
+            System.out.println("E: Error while generating session key");
+            ex.printStackTrace();
+            return null;
+        }
+    }
 }

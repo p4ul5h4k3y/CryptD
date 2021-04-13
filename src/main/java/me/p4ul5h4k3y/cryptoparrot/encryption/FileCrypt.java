@@ -21,10 +21,9 @@ import java.util.zip.ZipOutputStream;
 
 public class FileCrypt extends Encrypt {
 
-    public FileCrypt(String pathToEncrypt, String filenameDestination, SecretKey currentSessionKey) {
+    public FileCrypt(String pathToEncrypt, String filenameDestination, PublicKey encryptionKey) {
         Security.addProvider(new BouncyCastleProvider());
 
-        PublicKey key = (PublicKey) getKey(false);
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ZipOutputStream zipout = new ZipOutputStream(bos);
@@ -42,7 +41,7 @@ public class FileCrypt extends Encrypt {
                 toSaveData = path.getName() + ".crypt";
             }
 
-            storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), key, toSaveData);
+            storeDataAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "file/dir"), encryptionKey, toSaveData);
             System.out.println("\nSaved encrypted data to file : " + filenameDestination);
         } catch (IOException e) {
             System.out.println("E: Error occurred while compressing the files for encryption");

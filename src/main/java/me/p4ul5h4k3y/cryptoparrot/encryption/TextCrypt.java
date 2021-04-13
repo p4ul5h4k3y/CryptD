@@ -12,12 +12,11 @@ import java.security.*;
 
 public class TextCrypt extends Encrypt {
 
-    public TextCrypt(String toEncrypt, String filenameDestination, SecretKey currentSessionKey) {
+    public TextCrypt(String toEncrypt, String filenameDestination, PublicKey encryptionKey) {
         Security.addProvider(new BouncyCastleProvider());
 
-        PublicKey key = (PublicKey) getKey(false);      //gets public key
         byte[] encrypted = TextCrypt.encrypt(toEncrypt, currentSessionKey);         //encrypts text
-        storeTextAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "text"), key, filenameDestination);   //save encrypted data
+        storeDataAndKey(new TextAndKey(bytesToHex(encrypted), currentSessionKey, "text"), encryptionKey, filenameDestination);   //save encrypted data
         System.out.println("\nSaved encrypted text to file : " + filenameDestination);
     }
 

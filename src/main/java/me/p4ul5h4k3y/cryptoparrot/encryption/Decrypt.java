@@ -3,6 +3,7 @@ package me.p4ul5h4k3y.cryptoparrot.encryption;
 //Written by p4ul5h4k3y
 //This class extends Encrypt and provides functionality for decrypting data. It automatically detects what type of data is being decrypted and outputs the decrypted data to the user
 
+import me.p4ul5h4k3y.cryptoparrot.keys.KeyFinder;
 import me.p4ul5h4k3y.cryptoparrot.util.datatypes.TextAndKey;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -14,7 +15,7 @@ public class Decrypt extends Encrypt {
 
 
     public Decrypt(String pathToDecrypt, String filenameDestination) {
-        PrivateKey key = (PrivateKey) getKey(true);             //gets the private RSA key for data decryption
+        PrivateKey key = (PrivateKey) new KeyFinder(true).quickAccessKey;             //gets the private RSA key for data decryption
         TextAndKey cryptTextAndKey = getTextAndKey(pathToDecrypt, key);    //finds AES key used to encrypt the data
         assert cryptTextAndKey != null;
         SecretKey oldSessionKey = cryptTextAndKey.sessionKey;
