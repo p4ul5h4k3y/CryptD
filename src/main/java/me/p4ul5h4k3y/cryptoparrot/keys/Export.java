@@ -1,4 +1,4 @@
-package me.p4ul5h4k3y.cryptoparrot.contacts;
+package me.p4ul5h4k3y.cryptoparrot.keys;
 
 
 import me.p4ul5h4k3y.cryptoparrot.CryptoParrot;

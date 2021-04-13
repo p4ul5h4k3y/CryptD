@@ -4,11 +4,9 @@ Cryptography.iml
 out/
 
 # Testing material
-store.jks
 *.conf
-key.pub
 *.crypt
-/contacts/
+/keys/
 plan
 
 # Gradle

@@ -1,11 +1,11 @@
-package me.p4ul5h4k3y.cryptoparrot.contacts;
+package me.p4ul5h4k3y.cryptoparrot.keys;
+
+import me.p4ul5h4k3y.cryptoparrot.CryptoParrot;
 
 import java.io.*;
 import java.util.Properties;
 
 public class Import {
-
-    static String contactPath = "/home/user/Desktop/Programming/Java/Cryptography/contacts/";
 
     public Import(String importFrom, String nickname) {
         if (nickname.equals("NOT SPECIFIED")) {     //gets name from user if not specified
@@ -27,11 +27,16 @@ public class Import {
 
     public void importPubKey(String importDest, String name) {       //imports somebody else's public key from a specified destination, saving the key with a specified nickname
         try {
-            Properties config = new Properties();
-            config.load(new FileInputStream(contactPath + "contacts.conf"));    //gets the contact list
+            Properties generalConfig = new Properties();
+            Properties keyConfig = new Properties();
+            generalConfig.load(new FileInputStream(CryptoParrot.PATH));
+
+            String keyPath = generalConfig.getProperty("KEYDIR");
+
+            keyConfig.load(new FileInputStream(keyPath + "keys.conf"));
 
             InputStream in = new BufferedInputStream(new FileInputStream(importDest));
-            OutputStream out = new BufferedOutputStream(new FileOutputStream(contactPath + name));
+            OutputStream out = new BufferedOutputStream(new FileOutputStream(keyPath + name + ".pub"));
             byte[] buffer = new byte[1024];
             int len;
             while ((len = in.read(buffer)) > 0) {       //write the key to the filesystem
@@ -41,9 +46,9 @@ public class Import {
             in.close();
             out.close();
 
-            config.setProperty(name, contactPath + name);       //save the contact to the contact list
-            out = new BufferedOutputStream(new FileOutputStream(contactPath + "contacts.conf"));
-            config.store(out, "");
+            keyConfig.setProperty(name, keyPath + name + ".pub");       //save the contact to the contact list
+            out = new BufferedOutputStream(new FileOutputStream(keyPath + "keys.conf"));
+            keyConfig.store(out, "");
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
