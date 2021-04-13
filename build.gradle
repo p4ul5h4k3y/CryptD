@@ -11,7 +11,7 @@ jar {
     archiveClassifier.set("")
     archiveVersion.set("0.0.1-SNAPSHOT")
     manifest {
-        attributes "Main-Class": "me.p4ul5h4k3y.cryptoparrot.CryptoParrot"
+        attributes "Main-Class": "me.pschake34.cryptoparrot.CryptoParrot"
     }
     from {
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }

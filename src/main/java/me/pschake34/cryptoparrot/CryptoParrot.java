@@ -1,4 +1,4 @@
-package me.p4ul5h4k3y.cryptoparrot;
+package me.pschake34.cryptoparrot;
 
 //Written by p4ul5h4k3y
 //This file is the main class of the CryptoParrot project. It handles the options and executes code accordingly
@@ -7,12 +7,13 @@ package me.p4ul5h4k3y.cryptoparrot;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import me.p4ul5h4k3y.cryptoparrot.keys.Export;
-import me.p4ul5h4k3y.cryptoparrot.keys.Import;
-import me.p4ul5h4k3y.cryptoparrot.encryption.Decrypt;
-import me.p4ul5h4k3y.cryptoparrot.encryption.FileCrypt;
-import me.p4ul5h4k3y.cryptoparrot.encryption.TextCrypt;
-import me.p4ul5h4k3y.cryptoparrot.keys.KeyFinder;
+import me.pschake34.cryptoparrot.keys.Export;
+import me.pschake34.cryptoparrot.keys.Import;
+import me.pschake34.cryptoparrot.encryption.Decrypt;
+import me.pschake34.cryptoparrot.encryption.FileCrypt;
+import me.pschake34.cryptoparrot.encryption.TextCrypt;
+import me.pschake34.cryptoparrot.keys.KeyFinder;
+
 import java.security.PublicKey;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

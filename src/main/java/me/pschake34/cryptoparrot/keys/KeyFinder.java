@@ -1,6 +1,8 @@
-package me.p4ul5h4k3y.cryptoparrot.keys;
+package me.pschake34.cryptoparrot.keys;
 
-import me.p4ul5h4k3y.cryptoparrot.CryptoParrot;
+import me.pschake34.cryptoparrot.CryptoParrot;
+import me.pschake34.cryptoparrot.CryptoParrot;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
